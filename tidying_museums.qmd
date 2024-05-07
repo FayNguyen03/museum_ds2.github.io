@@ -1,0 +1,20 @@
+```{r}
+library(tidyverse)
+
+m1 <- read_csv("Data/museum_data/file1.csv") |>
+  select(DISCIPL, COMMONNAME, LEGALNAME, ADSTREET, ADCITY, ADSTATE, ADZIP5, WEBURL, LONGITUDE, LATITUDE, AAMREG, BEAREG, LOCALE4)
+m2 <- read_csv("Data/museum_data/file2.csv") |> mutate(MID = as.numeric(MID)) |>
+  select(DISCIPLINE, COMMONNAME, LEGALNAME, ADSTREET, ADCITY, ADSTATE, ADZIP5, WEBURL, LONGITUDE, LATITUDE, AAMREG, BEAREG, LOCALE4)
+m3 <- read_csv("Data/museum_data/file3.csv") |> mutate(MID = as.numeric(MID)) |>
+  select(DISCIPLINE, COMMONNAME, LEGALNAME, ADSTREET, ADCITY, ADSTATE, ADZIP5, WEBURL, LONGITUDE, LATITUDE, AAMREG, BEAREG, LOCALE4)
+
+museums <- m1 |> full_join(m2) |> full_join(m3)
+
+write_csv(museums, "Data/museums_tidy.csv")
+```
+
+```{r}
+
+```
+
+
