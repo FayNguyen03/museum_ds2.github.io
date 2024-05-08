@@ -1,20 +1,99 @@
 ```{r}
 library(tidyverse)
+```
 
-m1 <- read_csv("Data/museum_data/file1.csv") |>
-  select(DISCIPL, COMMONNAME, LEGALNAME, ADSTREET, ADCITY, ADSTATE, ADZIP5, WEBURL, LONGITUDE, LATITUDE, AAMREG, BEAREG, LOCALE4)
-m2 <- read_csv("Data/museum_data/file2.csv") |> mutate(MID = as.numeric(MID)) |>
+From [IMLS](https://www.imls.gov/research-evaluation/data-collection/museum-data-files), we downloaded three dataset files with approximately 30,000 establishments. `file1.csv` contains the **categorized** museums while `file2.csv` contains the **uncategorized** or general museums. The last file contains Historic Preservation.
+
+We merged these three files together and selected some variables of interest (continue updating):
+
+```{r}
+#DISCIPL column in file1 corresponding to DISCIPLINE column of other two files
+m1 <- read_csv("Data/raw_data/file1.csv") |>
+  rename(DISCIPLINE = DISCIPL) |>
   select(DISCIPLINE, COMMONNAME, LEGALNAME, ADSTREET, ADCITY, ADSTATE, ADZIP5, WEBURL, LONGITUDE, LATITUDE, AAMREG, BEAREG, LOCALE4)
-m3 <- read_csv("Data/museum_data/file3.csv") |> mutate(MID = as.numeric(MID)) |>
+m2 <- read_csv("Data/raw_data/file2.csv") |> mutate(MID = as.numeric(MID)) |>
+  select(DISCIPLINE, COMMONNAME, LEGALNAME, ADSTREET, ADCITY, ADSTATE, ADZIP5, WEBURL, LONGITUDE, LATITUDE, AAMREG, BEAREG, LOCALE4)
+m3 <- read_csv("Data/raw_data/file3.csv") |> mutate(MID = as.numeric(MID)) |>
   select(DISCIPLINE, COMMONNAME, LEGALNAME, ADSTREET, ADCITY, ADSTATE, ADZIP5, WEBURL, LONGITUDE, LATITUDE, AAMREG, BEAREG, LOCALE4)
 
 museums <- m1 |> full_join(m2) |> full_join(m3)
+```
 
++---------------+--------------------------------------------------------------+
+| Variable Name | Description                                                  |
++===============+==============================================================+
+| `DISCIPLINE`  | Museum discipline code of organization                       |
++---------------+--------------------------------------------------------------+
+| `COMMONNAME`  | Common name of organization                                  |
++---------------+--------------------------------------------------------------+
+| `LEGALNAME`   | Legal name of organization                                   |
++---------------+--------------------------------------------------------------+
+| `ADSTREET`    | Administrative address of organization, street address       |
++---------------+--------------------------------------------------------------+
+| `ADCITY`      | Administrative address of organization, city                 |
++---------------+--------------------------------------------------------------+
+| `ADSTATE`     | Administrative address of organization, state (abbreviation) |
++---------------+--------------------------------------------------------------+
+| `ADZIP5`      | Administrative address of organization, ZIP (5 digits)       |
++---------------+--------------------------------------------------------------+
+| `WEBURL`      | Web address of the organization                              |
++---------------+--------------------------------------------------------------+
+| `LONGITUDE`   | Longitude of institution’s address                           |
++---------------+--------------------------------------------------------------+
+| `LATITUDE`    | Latitude of institution’s address                            |
++---------------+--------------------------------------------------------------+
+| `BEAREG`      | Bureau of Economic Analysis regions                          |
++---------------+--------------------------------------------------------------+
+| `LOCALE4`     | NCES Urban-Centric Locale Codes classification               |
+|               |                                                              |
+|               | (1 - City, 2 - Suburb, 3 - Town, 4 - Rural)                  |
++---------------+--------------------------------------------------------------+
+
+Since we wanted to focus on museums and historical organizations, we excluded the "Zoos, Aquariums, & Wildlife Conservation" and "Arboretums, Botanical Gardens, & Nature Centers" categories (`DISCIPLINE` = ZAW and `DISCIPLINE` = BOT ) from the list.
+
+For the `DISCIPLINE`, each code corresponds to a category:
+
++--------------+-----------------------------------------------------+
+| CODE         | DISCIPLINE                                          |
++==============+=====================================================+
+| ART          | Art Museums                                         |
++--------------+-----------------------------------------------------+
+| CMU          | Children's Museums                                  |
++--------------+-----------------------------------------------------+
+| HST          | History Museums                                     |
++--------------+-----------------------------------------------------+
+| NAT          | Natural History & Natural Science Museums           |
++--------------+-----------------------------------------------------+
+| SCI          | Science & Technology Museums & Planetariums         |
++--------------+-----------------------------------------------------+
+| GMU          | Uncategorized or General Museums                    |
++--------------+-----------------------------------------------------+
+| HSC          | Historic Preservation                               |
++--------------+-----------------------------------------------------+
+
+```{r}
+museums <- museums |> 
+  filter(DISCIPLINE != 'ZAW', DISCIPLINE != 'BOT')
+```
+
+We extracted this dataset into a clean dataset for use named `museums_tidy.csv`.
+
+```{r}
 write_csv(museums, "Data/museums_tidy.csv")
 ```
 
+Since we wanted to find the correlation between the distribution of museums in a region and demographic data, we utilized another data set from [United States Census Bureau](https://data.census.gov/all/tables?q=All+5-digit+ZIP+Code+Tabulation+Areas+within+United+States+Populations+and+People). However, the dataset was not clear enough to analyse.
+
 ```{r}
+uscb_demo <- read_csv("Data/raw_data/USCB_population_age_2022.csv") |>
+  select(- Geography) |>
+  rename(zip_code = 'Geographic Area Name') |>
+  mutate(zip_code = str_replace(zip_code,'ZCTA5 ',''))
 
 ```
 
+We extracted this population dataset into a clean data set for use named `population_age.csv`.
 
+```{r}
+write_csv(uscb_demo, "Data/population_age.csv")
+```

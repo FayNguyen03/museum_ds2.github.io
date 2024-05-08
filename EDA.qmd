@@ -1,0 +1,13 @@
+---
+title: Example Plots
+---
+
+```{r}
+library(tidyverse)
+```
+
+
+```{r}
+museums_imls <- read_csv('Data/museums_tidy.csv')
+```
+
