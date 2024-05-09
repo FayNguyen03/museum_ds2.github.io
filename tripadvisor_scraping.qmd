@@ -12,7 +12,7 @@ mn_museum <- read_csv('Data/museums_tidy.csv') |>
 ```
 
 ```{r}
-API_KEY = "024CD356E7014745A5893ECA15E3FD7F"
+API_KEY = XXX
 url <- "https://api.content.tripadvisor.com/api/v1/location/search"
 ```
 
