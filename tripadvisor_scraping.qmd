@@ -17,48 +17,63 @@ url <- "https://api.content.tripadvisor.com/api/v1/location/search"
 ```
 
 ```{r}
-tripAdvisorAPI <- function(name, long, lat, postal){
+tripAdvisorAPI <- function(name, long, lat, state, postal) {
+
+  
   queryString <- list(
     language = "en",
-    key=API_KEY,
-    searchQuery=name,
-    latLong = paste(lat, long),
-    radius = 0
+    key = API_KEY,
+    searchQuery = name,
+    latLong = str(lat) + str(long)
   )
-
-  response <- VERB("GET", url, query = queryString, content_type("application/octet-stream"), accept("application/json"))
   
-  detail <- content(response, "parse")
-  location_id <- 0  
+  response <- GET(url, query = queryString, add_headers(Accept = "application/json"))
+  
+  if (http_error(response)) {
+    stop("API request failed with status code: ", status_code(response))
+  }
+  
+  # Parsing the API response
+  detail <- content(response, type = "application/json")
   num_results <- length(detail$data)
-  if (length(detail) == 0){
+  
+  if (num_results == 0) {
     return(0)
   }
-  for (i in 1:num_results) {
-    if (substr(detail$data[[i]]$address_obj$postalcode, 1, 5) == postal) {
-      location_id <- detail$data[[i]]$location_id  
-      break 
+  
+  for (i in seq_len(num_results)) {
+    address_obj <- detail$data[[i]]$address_obj
+    
+    if (address_obj$country == "United States") {
+      
+      if (!is.na(address_obj$state) && address_obj$state == state) {
+        return(address_obj$location_id)
+      }
+      
+      if (is.na(address_obj$state) || address_obj$state != state) {
+        if (!is.na(address_obj$postalcode) && substr(address_obj$postalcode, 1, 5) == postal) {
+          return(address_obj$location_id)
+        }
+      }
     }
   }
-
-  return(location_id)
+  
+  return(0)
 }
-
 ```
 
-```{r}
-#TEST
-typeof(tripAdvisorAPI("BIRMINGHAM MUSEUM OF ART",33.52206,-86.80939,35203))
-```
+
 
 ```{r}
 locations_mn <-tibble(name = mn_museum$COMMONNAME, lat = mn_museum$LATITUDE, long = mn_museum$LONGITUDE)
-location_id <- double()
+location_id <- double(length=length(mn_museum$COMMONNAME))
 ```
 
 ```{r}
 for (i in 1:length(mn_museum$COMMONNAME)){
-  location_id[i] <- tripAdvisorAPI(mn_museum$COMMONNAME[[i]], mn_museum$LONGITUDE[[i]], mn_museum$LATITUDE[[i]], mn_museum$ADZIP5[[i]])
+  print(i)
+  location_id[i] <- as.numeric(tripAdvisorAPI(mn_museum$COMMONNAME[i], mn_museum$LONGITUDE[i], mn_museum$LATITUDE[i], "Minnesota",mn_museum$ADZIP5[i]))
+  
 }
 
 ```
