@@ -66,7 +66,7 @@ inputPanel(
   sliderInput("bw_adjust", label = "Bandwidth adjustment:",
               min = 0.2, max = 2, value = 1, step = 0.2),
   selectInput("state", label = "State",
-              choices = c('MN','WI'), selected = 'MN')
+              choices = museums$ADSTATE, selected = 'MN')
 )
 ```
 
@@ -77,26 +77,13 @@ Column
 
 renderPlot({
   museums |> filter(ADSTATE == input$state)|>
-    group_by(DISCIPLINE) |>
+  group_by(DISCIPLINE) |>
   summarize(n = n()) |>
   ggplot(aes(x = DISCIPLINE, y = n)) +
-  geom_col()
+  geom_col() +
+  coord_flip(xlim = NULL, ylim = NULL, expand = TRUE, clip = "on")
 })
 
-```
-
-### Geyser Eruption Duration
-
-```{r echo = FALSE}
-renderPlot({
-  hist(faithful$eruptions, probability = TRUE, 
-       breaks = as.numeric(input$n_breaks),
-       xlab = "Duration (minutes)", 
-       main = "Geyser eruption duration")
-  
-  dens <- density(faithful$eruptions, adjust = input$bw_adjust)
-  lines(dens, col = "blue")
-})
 ```
 
 

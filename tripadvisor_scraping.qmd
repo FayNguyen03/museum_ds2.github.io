@@ -12,7 +12,7 @@ mn_museum <- read_csv('Data/museums_tidy.csv') |>
 ```
 
 ```{r}
-API_KEY = XXX
+API_KEY = "024CD356E7014745A5893ECA15E3FD7F"
 url <- "https://api.content.tripadvisor.com/api/v1/location/search"
 ```
 
@@ -50,7 +50,7 @@ tripAdvisorAPI <- function(name, long, lat, state, postal) {
         return(address_obj$location_id)
       }
       
-      if (is.na(address_obj$state) || address_obj$state != state) {
+      elif (is.na(address_obj$state) || address_obj$state != state) {
         if (!is.na(address_obj$postalcode) && substr(address_obj$postalcode, 1, 5) == postal) {
           return(address_obj$location_id)
         }

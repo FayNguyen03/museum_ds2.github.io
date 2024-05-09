@@ -74,7 +74,7 @@ For the `DISCIPLINE`, each code corresponds to a category:
 
 ```{r}
 museums <- museums |> 
-  filter(DISCIPLINE != "ZAW", DISCIPLINE != "BOT", !str_detect(COMMONNAME,".SOCIETY$")) 
+  filter(DISCIPLINE != "ZAW", DISCIPLINE != "BOT") 
 ```
 
 We extracted this dataset into a clean dataset for use named `museums_tidy.csv`.
