@@ -1,5 +1,6 @@
 ```{r}
 library(tidyverse)
+library(stringr)
 ```
 
 From [IMLS](https://www.imls.gov/research-evaluation/data-collection/museum-data-files), we downloaded three dataset files with approximately 30,000 establishments. `file1.csv` contains the **categorized** museums while `file2.csv` contains the **uncategorized** or general museums. The last file contains Historic Preservation.
@@ -73,7 +74,7 @@ For the `DISCIPLINE`, each code corresponds to a category:
 
 ```{r}
 museums <- museums |> 
-  filter(DISCIPLINE != 'ZAW', DISCIPLINE != 'BOT')
+  filter(DISCIPLINE != "ZAW", DISCIPLINE != "BOT", !str_detect(COMMONNAME,".SOCIETY$")) 
 ```
 
 We extracted this dataset into a clean dataset for use named `museums_tidy.csv`.
@@ -82,18 +83,36 @@ We extracted this dataset into a clean dataset for use named `museums_tidy.csv`.
 write_csv(museums, "Data/museums_tidy.csv")
 ```
 
-Since we wanted to find the correlation between the distribution of museums in a region and demographic data, we utilized another data set from [United States Census Bureau](https://data.census.gov/all/tables?q=All+5-digit+ZIP+Code+Tabulation+Areas+within+United+States+Populations+and+People). However, the dataset was not clear enough to analyse.
+Since we wanted to find the correlation between the distribution of museums in a region and demographic data, we utilized another data set from [United States Census Bureau](https://data.census.gov/all/tables?q=All+5-digit+ZIP+Code+Tabulation+Areas+within+United+States+Populations+and+People). However, the dataset was not clear enough to analyse so we need to restructure
 
 ```{r}
-uscb_demo <- read_csv("Data/raw_data/USCB_population_age_2022.csv") |>
+uscb_demo_1 <- read_csv("Data/raw_data/UCSB_population_age_2022.csv") |>
   select(- Geography) |>
   rename(zip_code = 'Geographic Area Name') |>
   mutate(zip_code = str_replace(zip_code,'ZCTA5 ',''))
-
 ```
 
 We extracted this population dataset into a clean data set for use named `population_age.csv`.
 
+I also wan
+
 ```{r}
-write_csv(uscb_demo, "Data/population_age.csv")
+write_csv(uscb_demo_1, "Data/population_age.csv")
 ```
+
+
+```{r}
+ucsb_demo_2 <- read_csv("Data/raw_data/UCSB_income_2022.csv") |>
+  select(- Geography) |>
+  rename(zip_code = 'Geographic Area Name') |>
+  mutate(zip_code = str_replace(zip_code,'ZCTA5 ',''))
+```
+
+We extracted this population dataset into a clean data set for use named `income.csv`.
+
+```{r}
+write_csv(ucsb_demo_2, "Data/income.csv")
+```
+
+
+These two files above are in the area units that classifiied by zip code. We also extracted a data set of population in the city units.

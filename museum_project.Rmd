@@ -17,11 +17,8 @@ Column {data-width = 200}
 
 **Background Information**
 
- 
+![](img/museum1.jpg) 
 
-To learn more, see [Interactive Documents](http://rmarkdown.rstudio.com/authoring_shiny.html).
-
-Column {data-width = 200}
 -------------------------
 
 **Inputs and Outputs**
