@@ -95,11 +95,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors</code></pre>
 </div>
 </div>
-<p>From <img src="https://www.imls.gov/research-evaluation/data-collection/museum-data-files.png" class="img-fluid" alt="IMLS">, we downloaded three .csv file</p>
+<p>From <a href="https://www.imls.gov/research-evaluation/data-collection/museum-data-files">IMLS</a>, we downloaded three dataset files with approximately 30,000 establishments. <code>file1.csv</code> contains the <strong>categorized</strong> museums while <code>file2.csv</code> contains the <strong>uncategorized</strong> or general museums. The last file contains Historic Preservation.</p>
+<p>We merged these three files together and selected some variables of interest (continue updating):</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>m1 <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"Data/museum_data/file1.csv"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">DISCIPLINE =</span> DISCIPL) <span class="sc">|&gt;</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(DISCIPLINE, COMMONNAME, LEGALNAME, ADSTREET, ADCITY, ADSTATE, ADZIP5, WEBURL, LONGITUDE, LATITUDE, AAMREG, BEAREG, LOCALE4)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">#DISCIPL column in file1 corresponding to DISCIPLINE column of other two files</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>m1 <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"Data/raw_data/file1.csv"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">DISCIPLINE =</span> DISCIPL) <span class="sc">|&gt;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(DISCIPLINE, COMMONNAME, LEGALNAME, ADSTREET, ADCITY, ADSTATE, ADZIP5, WEBURL, LONGITUDE, LATITUDE, AAMREG, BEAREG, LOCALE4)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning: One or more parsing issues, call `problems()` on your data frame for details,
 e.g.:
@@ -116,7 +118,7 @@ dbl (19): NAICS, PHONE, TAXPER15, INCOMECD15, INCOME15, REVENUE15, IPEDS, LO...
 ℹ Use `spec()` to retrieve the full column specification for this data.
 ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>m2 <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"Data/museum_data/file2.csv"</span>) <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">MID =</span> <span class="fu">as.numeric</span>(MID)) <span class="sc">|&gt;</span></span>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>m2 <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"Data/raw_data/file2.csv"</span>) <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">MID =</span> <span class="fu">as.numeric</span>(MID)) <span class="sc">|&gt;</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(DISCIPLINE, COMMONNAME, LEGALNAME, ADSTREET, ADCITY, ADSTATE, ADZIP5, WEBURL, LONGITUDE, LATITUDE, AAMREG, BEAREG, LOCALE4)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning: One or more parsing issues, call `problems()` on your data frame for details,
@@ -134,7 +136,7 @@ dbl (21): MID, NAICS, PHONE, TAXPER15, INCOMECD15, INCOME15, REVENUE15, IPED...
 ℹ Use `spec()` to retrieve the full column specification for this data.
 ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>m3 <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"Data/museum_data/file3.csv"</span>) <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">MID =</span> <span class="fu">as.numeric</span>(MID)) <span class="sc">|&gt;</span></span>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>m3 <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"Data/raw_data/file3.csv"</span>) <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">MID =</span> <span class="fu">as.numeric</span>(MID)) <span class="sc">|&gt;</span></span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(DISCIPLINE, COMMONNAME, LEGALNAME, ADSTREET, ADCITY, ADSTATE, ADZIP5, WEBURL, LONGITUDE, LATITUDE, AAMREG, BEAREG, LOCALE4)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning: One or more parsing issues, call `problems()` on your data frame for details,
@@ -161,9 +163,164 @@ Joining with `by = join_by(DISCIPLINE, COMMONNAME, LEGALNAME, ADSTREET, ADCITY,
 ADSTATE, ADZIP5, WEBURL, LONGITUDE, LATITUDE, AAMREG, BEAREG, LOCALE4)`</code></pre>
 </div>
 </div>
+<table class="table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 79%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Variable Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>DISCIPLINE</code></td>
+<td>Museum discipline code of organization</td>
+</tr>
+<tr class="even">
+<td><code>COMMONNAME</code></td>
+<td>Common name of organization</td>
+</tr>
+<tr class="odd">
+<td><code>LEGALNAME</code></td>
+<td>Legal name of organization</td>
+</tr>
+<tr class="even">
+<td><code>ADSTREET</code></td>
+<td>Administrative address of organization, street address</td>
+</tr>
+<tr class="odd">
+<td><code>ADCITY</code></td>
+<td>Administrative address of organization, city</td>
+</tr>
+<tr class="even">
+<td><code>ADSTATE</code></td>
+<td>Administrative address of organization, state (abbreviation)</td>
+</tr>
+<tr class="odd">
+<td><code>ADZIP5</code></td>
+<td>Administrative address of organization, ZIP (5 digits)</td>
+</tr>
+<tr class="even">
+<td><code>WEBURL</code></td>
+<td>Web address of the organization</td>
+</tr>
+<tr class="odd">
+<td><code>LONGITUDE</code></td>
+<td>Longitude of institution’s address</td>
+</tr>
+<tr class="even">
+<td><code>LATITUDE</code></td>
+<td>Latitude of institution’s address</td>
+</tr>
+<tr class="odd">
+<td><code>BEAREG</code></td>
+<td>Bureau of Economic Analysis regions</td>
+</tr>
+<tr class="even">
+<td><code>LOCALE4</code></td>
+<td><p>NCES Urban-Centric Locale Codes classification</p>
+<p>(1 - City, 2 - Suburb, 3 - Town, 4 - Rural)</p></td>
+</tr>
+</tbody>
+</table>
+<p>Since we wanted to focus on museums and historical organizations, we excluded the “Zoos, Aquariums, &amp; Wildlife Conservation” and “Arboretums, Botanical Gardens, &amp; Nature Centers” categories (<code>DISCIPLINE</code> = ZAW and <code>DISCIPLINE</code> = BOT ) from the list.</p>
+<p>For the <code>DISCIPLINE</code>, each code corresponds to a category:</p>
+<table class="table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 75%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>CODE</th>
+<th>DISCIPLINE</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>ART</td>
+<td>Art Museums</td>
+</tr>
+<tr class="even">
+<td>CMU</td>
+<td>Children’s Museums</td>
+</tr>
+<tr class="odd">
+<td>HST</td>
+<td>History Museums</td>
+</tr>
+<tr class="even">
+<td>NAT</td>
+<td>Natural History &amp; Natural Science Museums</td>
+</tr>
+<tr class="odd">
+<td>SCI</td>
+<td>Science &amp; Technology Museums &amp; Planetariums</td>
+</tr>
+<tr class="even">
+<td>GMU</td>
+<td>Uncategorized or General Museums</td>
+</tr>
+<tr class="odd">
+<td>HSC</td>
+<td>Historic Preservation</td>
+</tr>
+</tbody>
+</table>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">write_csv</span>(museums, <span class="st">"Data/museums_tidy.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>museums <span class="ot">&lt;-</span> museums <span class="sc">|&gt;</span> </span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(DISCIPLINE <span class="sc">!=</span> <span class="st">'ZAW'</span>, DISCIPLINE <span class="sc">!=</span> <span class="st">'BOT'</span>, DISCIPLINE <span class="sc">!=</span> <span class="st">'HSC'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
+<p>We extracted this dataset into a clean dataset for use named <code>museums_tidy.csv</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">write_csv</span>(museums, <span class="st">"Data/museums_tidy.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Since we wanted to find the correlation between the distribution of museums in a region and demographic data, we utilized another data set from <a href="https://data.census.gov/all/tables?q=All+5-digit+ZIP+Code+Tabulation+Areas+within+United+States+Populations+and+People">United States Census Bureau</a>. However, the dataset was not clear enough to analyse so we need to restructure</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>uscb_demo_1 <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"Data/raw_data/UCSB_population_age_2022.csv"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span> Geography) <span class="sc">|&gt;</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">zip_code =</span> <span class="st">'Geographic Area Name'</span>) <span class="sc">|&gt;</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">zip_code =</span> <span class="fu">str_replace</span>(zip_code,<span class="st">'ZCTA5 '</span>,<span class="st">''</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Rows: 33774 Columns: 9
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+chr (3): Geography, Geographic Area Name, median_age
+dbl (6): total_population, total_population_male, total_population_female, u...
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+</div>
+</div>
+<p>We extracted this population dataset into a clean data set for use named <code>population_age.csv</code>.</p>
+<p>I also wan</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">write_csv</span>(uscb_demo_1, <span class="st">"Data/population_age.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>ucsb_demo_2 <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"Data/raw_data/UCSB_income_2022.csv"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span> Geography) <span class="sc">|&gt;</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">zip_code =</span> <span class="st">'Geographic Area Name'</span>) <span class="sc">|&gt;</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">zip_code =</span> <span class="fu">str_replace</span>(zip_code,<span class="st">'ZCTA5 '</span>,<span class="st">''</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Rows: 33774 Columns: 3
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+chr (2): Geography, Geographic Area Name
+dbl (1): household_income
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+</div>
+</div>
+<p>We extracted this population dataset into a clean data set for use named <code>income.csv</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">write_csv</span>(ucsb_demo_2, <span class="st">"Data/income.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>These two files above are in the area units that classifiied by zip code. We also extracted a data set of population in the city units.</p>
 
 </main>
 <!-- /main column -->
