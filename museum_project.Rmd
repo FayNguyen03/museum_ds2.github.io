@@ -7,6 +7,29 @@ runtime: shiny
 ```{r global, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
+library(ggspatial)
+library(sf)
+library(ggthemes)
+
+museums <- read_csv("Data/museums_tidy.csv") 
+museums_sf <- museums |> filter(!is.na(LONGITUDE)) |> filter(!is.na(LATITUDE)) |>  st_as_sf(coords = c("LONGITUDE", "LATITUDE"), remove = FALSE) |> st_set_crs(4326) 
+mn_sf <- st_read("Data/shp_bdry_counties_in_minnesota/mn_county_boundaries.shp") |> st_transform(4326)
+```
+
+
+```{r}
+mn_museums <- museums_sf |> 
+  filter(DISCIPLINE != "ZAW") |> 
+  filter(DISCIPLINE != "BOT") |> 
+  filter(ADSTATE == "MN")
+
+ggplot() +
+  geom_sf(data = mn_sf) +
+  geom_sf(data = mn_museums, size = 0.1) +
+  labs(
+    title = "Museums in Minnesota"
+  ) +
+  theme_map()
 ```
 
 About
