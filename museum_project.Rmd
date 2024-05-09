@@ -104,8 +104,6 @@ Column
 -------------------------
 ```{r}
 mn_museums <- museums_sf |> 
-  filter(DISCIPLINE != "ZAW") |> 
-  filter(DISCIPLINE != "BOT") |> 
   filter(ADSTATE == "MN")
 
 ggplot() +
