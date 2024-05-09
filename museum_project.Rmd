@@ -17,21 +17,6 @@ mn_sf <- st_read("Data/shp_bdry_counties_in_minnesota/mn_county_boundaries.shp")
 ```
 
 
-```{r}
-mn_museums <- museums_sf |> 
-  filter(DISCIPLINE != "ZAW") |> 
-  filter(DISCIPLINE != "BOT") |> 
-  filter(ADSTATE == "MN")
-
-ggplot() +
-  geom_sf(data = mn_sf) +
-  geom_sf(data = mn_museums, size = 0.1) +
-  labs(
-    title = "Museums in Minnesota"
-  ) +
-  theme_map()
-```
-
 
 
 About
@@ -71,7 +56,7 @@ inputPanel(
 ```
 
 
-Column 
+Column
 -------------------------
 ```{r, echo=FALSE}
 
@@ -100,12 +85,11 @@ renderPlot({
 ```
 
 
-Tidyverse
+Maps
 ==========================
 
 Inputs {.sidebar}
 -------------------------
-
 ```{r, echo=FALSE}
 inputPanel(
   selectInput("n_breaks2", label = "Number of bins:",
@@ -118,6 +102,20 @@ inputPanel(
 
 Column 
 -------------------------
+```{r}
+mn_museums <- museums_sf |> 
+  filter(DISCIPLINE != "ZAW") |> 
+  filter(DISCIPLINE != "BOT") |> 
+  filter(ADSTATE == "MN")
+
+ggplot() +
+  geom_sf(data = mn_sf) +
+  geom_sf(data = mn_museums, size = 0.1) +
+  labs(
+    title = "Museums in Minnesota"
+  ) +
+  theme_map()
+```
 
 ### Geyser Eruption Duration
 
