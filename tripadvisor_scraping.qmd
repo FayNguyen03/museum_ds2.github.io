@@ -33,26 +33,23 @@ tripAdvisorAPI <- function(name, long, lat, state, postal) {
     stop("API request failed with status code: ", status_code(response))
   }
   
-  # Parsing the API response
   detail <- content(response, type = "application/json")
   num_results <- length(detail$data)
-  
   if (num_results == 0) {
     return(0)
   }
-  
   for (i in seq_len(num_results)) {
     address_obj <- detail$data[[i]]$address_obj
     
     if (address_obj$country == "United States") {
       
       if (!is.na(address_obj$state) && address_obj$state == state) {
-        return(address_obj$location_id)
+        return(detail$data[[i]]$location_id)
       }
       
-      elif (is.na(address_obj$state) || address_obj$state != state) {
+      else if (is.na(address_obj$state)) {
         if (!is.na(address_obj$postalcode) && substr(address_obj$postalcode, 1, 5) == postal) {
-          return(address_obj$location_id)
+          return(detail$data[[i]]$location_id)
         }
       }
     }
@@ -71,8 +68,7 @@ location_id <- double(length=length(mn_museum$COMMONNAME))
 
 ```{r}
 for (i in 1:length(mn_museum$COMMONNAME)){
-  print(i)
-  location_id[i] <- as.numeric(tripAdvisorAPI(mn_museum$COMMONNAME[i], mn_museum$LONGITUDE[i], mn_museum$LATITUDE[i], "Minnesota",mn_museum$ADZIP5[i]))
+  location_id[i] <-as.numeric( tripAdvisorAPI(mn_museum$COMMONNAME[i], mn_museum$LONGITUDE[i], mn_museum$LATITUDE[i], "Minnesota",mn_museum$ADZIP5[i]))
   
 }
 
