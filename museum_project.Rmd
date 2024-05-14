@@ -50,13 +50,14 @@ For the `DISCIPLINE`, each code corresponds to a category:
 ## Inputs {.sidebar}
 
 ```{r, echo=FALSE}
+distinct_discipline <-distinct(museums$DISCIPLINE)
 inputPanel(
   selectInput("state", label = "State",
               choices = museums$ADSTATE, selected = NULL),
   radioButtons(
     "discipline",
     label = "Discipline",
-    choices = distinct(museums$DISCIPLINE),
+    choices = distinct_discipline,
     selected = NULL,
     inline = FALSE,
     width = NULL,
@@ -69,7 +70,6 @@ inputPanel(
 ## Column
 
 ```{r, echo=FALSE}
-
 renderPlot({
   if (input$state != ""){
     discipline1 <- museums |> filter(ADSTATE == input$state)|>
