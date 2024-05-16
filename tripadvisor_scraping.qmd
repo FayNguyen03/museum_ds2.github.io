@@ -43,11 +43,13 @@ tripAdvisorAPI <- function(name, long, lat, state, postal) {
     
     if (address_obj$country == "United States") {
       
-      if (!is.na(address_obj$state) && address_obj$state == state) {
-        return(detail$data[[i]]$location_id)
+      if (!is.na(address_obj$state)) {
+        if(address_obj$state == state){
+          return(detail$data[[i]]$location_id)
+        }
       }
       
-      else if (is.na(address_obj$state)) {
+      else {
         if (!is.na(address_obj$postalcode) && substr(address_obj$postalcode, 1, 5) == postal) {
           return(detail$data[[i]]$location_id)
         }
@@ -67,7 +69,7 @@ location_id <- double(length=length(mn_museum$COMMONNAME))
 ```
 
 ```{r}
-for (i in 1:length(mn_museum$COMMONNAME)){
+for (i in 2931:length(mn_museum$COMMONNAME)){
   location_id[i] <-as.numeric( tripAdvisorAPI(mn_museum$COMMONNAME[i], mn_museum$LONGITUDE[i], mn_museum$LATITUDE[i], "Minnesota",mn_museum$ADZIP5[i]))
   
 }
