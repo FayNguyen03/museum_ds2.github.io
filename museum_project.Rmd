@@ -121,6 +121,26 @@ renderPlot({
 })
 ```
 
+
+
+```{r, echo = FALSE}
+renderPlot({
+  
+   discipline2 <- museums |>
+    filter(DISCIPLINE == input$discipline)|>
+    group_by(ADSTATE) |>
+    summarize(num = n()) |>
+    slice_max(n,10)
+   title1 <- "Discipline Distribution in the USA"
+  
+    discipline2|>
+    ggplot(aes(x = fct_reorder(ADSTATE,num), y = num)) +
+    geom_col()+
+    gghighlight(ADSTATE == input$state) +
+    labs(x="State") 
+})
+```
+
 # Maps
 
 ## Inputs {.sidebar}
@@ -234,4 +254,62 @@ ggplot(faithful, aes(x = eruptions)) +
   geom_density(adjust = 1.2, colour = "blue") +
   labs(x = "Duration (minutes)", 
        title = "Geyser eruption duration")
+<<<<<<< HEAD
+=======
+```
+
+
+# NAME ANALYSIS
+
+## Inputs {.sidebar}
+
+```{r, echo=FALSE}
+inputPanel(
+  selectInput("n_breaks2", label = "Number of bins:",
+              choices = c(5, 10, 15, 20, 25, 30), selected = 15),
+  
+  sliderInput("bw_adjust2", label = "Bandwidth adjustment:",
+              min = 0.1, max = 3, value = 1.2, step = 0.1)
+)
+```
+
+## Column
+
+```{r}
+mn_museums <- museums_sf |> 
+  filter(ADSTATE == "MN")
+
+ggplot() +
+  geom_sf(data = mn_sf) +
+  geom_sf(data = mn_museums, size = 0.1) +
+  labs(
+    title = "Museums in Minnesota"
+  ) +
+  theme_map()
+```
+
+### Geyser Eruption Duration
+
+```{r echo = FALSE}
+renderPlot({
+  ggplot(faithful, aes(x = eruptions)) +
+    geom_histogram(aes(y = ..density..), 
+                   bins = as.numeric(input$n_breaks2),
+                   fill = "white", colour = "black") +
+    geom_density(adjust = input$bw_adjust2, colour = "blue") +
+    labs(x = "Duration (minutes)", 
+         title = "Geyser eruption duration")
+})
+```
+
+```{r, eval = FALSE, include = FALSE}
+# First write code that works, then incorporate into renderPlot
+ggplot(faithful, aes(x = eruptions)) +
+  geom_histogram(aes(y = ..density..), 
+                 bins = 15,
+                 fill = "white", colour = "black") +
+  geom_density(adjust = 1.2, colour = "blue") +
+  labs(x = "Duration (minutes)", 
+       title = "Geyser eruption duration")
+>>>>>>> 4b17d2453a041124a0bc676bed8ba43dc621fe85
 ```
