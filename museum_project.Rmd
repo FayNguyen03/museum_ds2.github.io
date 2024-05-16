@@ -11,6 +11,8 @@ library(ggspatial)
 library(sf)
 library(ggthemes)
 library(dplyr)
+library(ggrepel)
+library(gghighlight)
 
 museums <- read_csv("Data/museums_tidy.csv") 
 museums_sf <- museums |> filter(!is.na(LONGITUDE)) |> filter(!is.na(LATITUDE)) |>  st_as_sf(coords = c("LONGITUDE", "LATITUDE"), remove = FALSE) |> st_set_crs(4326) 
@@ -31,9 +33,9 @@ Being inspired by these accounts, we were curious to see if there was such a thi
 
 ------------------------------------------------------------------------
 
-**Dataset Information**
+**Data set Information**
 
-For the `DISCIPLINE`, each code corresponds to a category:
+There are 7 categories of museums regulated by the IMLS. For the `DISCIPLINE`, each code corresponds to a category
 
 | CODE | DISCIPLINE                                  |
 |------|---------------------------------------------|
@@ -50,14 +52,14 @@ For the `DISCIPLINE`, each code corresponds to a category:
 ## Inputs {.sidebar}
 
 ```{r, echo=FALSE}
-distinct_discipline <-distinct(museums$DISCIPLINE)
+#distinct_discipline <- distinct(museums$DISCIPLINE)
 inputPanel(
   selectInput("state", label = "State",
               choices = museums$ADSTATE, selected = NULL),
   radioButtons(
     "discipline",
     label = "Discipline",
-    choices = distinct_discipline,
+    choices = unique(museums$DISCIPLINE),
     selected = NULL,
     inline = FALSE,
     width = NULL,
@@ -83,17 +85,92 @@ renderPlot({
     summarize(n = n()) 
    title1 <- "Discipline Distribution in the USA"
   }
+  
     discipline1|>
     ggplot(aes(x = fct_reorder(DISCIPLINE,n), y = n)) +
     geom_col(aes(fill = DISCIPLINE)) +
     coord_flip(xlim = NULL, ylim = NULL, expand = TRUE, clip = "on")+
     labs(x = "Number of Organizations", y = "Discipline", title = title1)
-  
 })
 
 ```
 
+
+
+```{r, echo = FALSE}
+renderPlot({
+  
+   discipline2 <- museums |>
+    filter(DISCIPLINE == input$discipline)|>
+    group_by(ADSTATE) |>
+    summarize(num = n()) |>
+    slice_max(n,10)
+   title1 <- "Discipline Distribution in the USA"
+  
+    discipline2|>
+    ggplot(aes(x = fct_reorder(ADSTATE,num), y = num)) +
+    geom_col()+
+    gghighlight(ADSTATE == input$state) +
+    labs(x="State") 
+})
+```
+
 # Maps
+
+## Inputs {.sidebar}
+
+```{r, echo=FALSE}
+inputPanel(
+  selectInput("n_breaks2", label = "Number of bins:",
+              choices = c(5, 10, 15, 20, 25, 30), selected = 15),
+  
+  sliderInput("bw_adjust2", label = "Bandwidth adjustment:",
+              min = 0.1, max = 3, value = 1.2, step = 0.1)
+)
+```
+
+## Column
+
+```{r}
+mn_museums <- museums_sf |> 
+  filter(ADSTATE == "MN")
+
+ggplot() +
+  geom_sf(data = mn_sf) +
+  geom_sf(data = mn_museums, size = 0.1) +
+  labs(
+    title = "Museums in Minnesota"
+  ) +
+  theme_map()
+```
+
+### Geyser Eruption Duration
+
+```{r echo = FALSE}
+renderPlot({
+  ggplot(faithful, aes(x = eruptions)) +
+    geom_histogram(aes(y = ..density..), 
+                   bins = as.numeric(input$n_breaks2),
+                   fill = "white", colour = "black") +
+    geom_density(adjust = input$bw_adjust2, colour = "blue") +
+    labs(x = "Duration (minutes)", 
+         title = "Geyser eruption duration")
+})
+```
+
+```{r, eval = FALSE, include = FALSE}
+# First write code that works, then incorporate into renderPlot
+ggplot(faithful, aes(x = eruptions)) +
+  geom_histogram(aes(y = ..density..), 
+                 bins = 15,
+                 fill = "white", colour = "black") +
+  geom_density(adjust = 1.2, colour = "blue") +
+  labs(x = "Duration (minutes)", 
+       title = "Geyser eruption duration")
+```
+
+
+# NAME ANALYSIS
 
 ## Inputs {.sidebar}
 
