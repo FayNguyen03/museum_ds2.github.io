@@ -14,15 +14,26 @@ library(dplyr)
 library(cdlTools)
 library(ggrepel)
 library(gghighlight)
+library(beepr)
+library(tigris)
+library(spData)
+data(us_states)
+library(raster)
+library(tmap)
 
 museums <- read_csv("Data/museums_tidy.csv") 
 museums_sf <- museums |> filter(!is.na(LONGITUDE)) |> filter(!is.na(LATITUDE)) |>  st_as_sf(coords = c("LONGITUDE", "LATITUDE"), remove = FALSE) |> st_set_crs(4326) |> st_transform(4269)
 mn_sf <- st_read("Data/shp_bdry_counties_in_minnesota/mn_county_boundaries.shp") |> st_transform(4326)
 
-counties <- st_read("Data/tl_2023_us_county/tl_2023_us_county.shp") |>
+counties <- st_read("Data/cb_2023_us_county_5m/cb_2023_us_county_5m.shp") |>
   # as.data.frame() |> 
   mutate(
     STATEFP = fips(STATEFP, to = 'Abbreviation')
+  )
+
+us_states <- us_states |> 
+  mutate(
+    ADSTATE = fips(GEOID, to = "Abbreviation")
   )
 ```
 
@@ -147,169 +158,101 @@ renderPlot({
 
 ```{r, echo=FALSE}
 inputPanel(
-  selectInput("n_breaks2", label = "Number of bins:",
-              choices = c(5, 10, 15, 20, 25, 30), selected = 15),
+  selectInput("input_var", label = "Number of museums by:",
+              choices = c("State", "Population", "Area"), selected = "State"),
   
   sliderInput("bw_adjust2", label = "Bandwidth adjustment:",
-              min = 0.1, max = 3, value = 1.2, step = 0.1)
+              min = 0.1, max = 3, value = 1.2, step = 0.1),
+  
+  selectInput("input_state", label = "State:",
+              choices = c(as.character(us_states$ADSTATE)), selected = "MN")
 )
+  
 ```
 
-## Column
-
-```{r}
-ggplot() +
-  geom_sf(data = counties)
-```
-
-
-```{r}
-mn_museums <- museums_sf |> 
-  filter(ADSTATE == "MN")
-
-ggplot() +
-  geom_sf(data = mn_sf) +
-  geom_sf(data = mn_museums, size = 0.1) +
-  labs(
-    title = "Museums in Minnesota"
-  ) +
-  theme_map()
-```
-
-### Geyser Eruption Duration
-
-```{r echo = FALSE}
-renderPlot({
-  ggplot(faithful, aes(x = eruptions)) +
-    geom_histogram(aes(y = ..density..), 
-                   bins = as.numeric(input$n_breaks2),
-                   fill = "white", colour = "black") +
-    geom_density(adjust = input$bw_adjust2, colour = "blue") +
-    labs(x = "Duration (minutes)", 
-         title = "Geyser eruption duration")
-})
-```
-
-```{r, eval = FALSE, include = FALSE}
-# First write code that works, then incorporate into renderPlot
-ggplot(faithful, aes(x = eruptions)) +
-  geom_histogram(aes(y = ..density..), 
-                 bins = 15,
-                 fill = "white", colour = "black") +
-  geom_density(adjust = 1.2, colour = "blue") +
-  labs(x = "Duration (minutes)", 
-       title = "Geyser eruption duration")
-```
-
-
-# NAME ANALYSIS
-
-## Inputs {.sidebar}
 
 ```{r, echo=FALSE}
-inputPanel(
-  selectInput("n_breaks2", label = "Number of bins:",
-              choices = c(5, 10, 15, 20, 25, 30), selected = 15),
-  
-  sliderInput("bw_adjust2", label = "Bandwidth adjustment:",
-              min = 0.1, max = 3, value = 1.2, step = 0.1)
+  inputPanel(
+    selectInput("input_county", label = "County:",
+              choices = c("", filter(counties, STATEFP == "MN")$NAME), selected = "All"),
 )
+reactive({
+          updateSelectInput(session, "input_county", choices = c("", filter(counties, STATEFP == input$input_state)$NAME), selected = "")
+    })
+
 ```
 
 ## Column
-
-```{r}
-mn_museums <- museums_sf |> 
-  filter(ADSTATE == "MN")
-
-ggplot() +
-  geom_sf(data = mn_sf) +
-  geom_sf(data = mn_museums, size = 0.1) +
-  labs(
-    title = "Museums in Minnesota"
-  ) +
-  theme_map()
-```
-
-### Geyser Eruption Duration
-
-```{r echo = FALSE}
-renderPlot({
-  ggplot(faithful, aes(x = eruptions)) +
-    geom_histogram(aes(y = ..density..), 
-                   bins = as.numeric(input$n_breaks2),
-                   fill = "white", colour = "black") +
-    geom_density(adjust = input$bw_adjust2, colour = "blue") +
-    labs(x = "Duration (minutes)", 
-         title = "Geyser eruption duration")
-})
-```
-
-```{r, eval = FALSE, include = FALSE}
-# First write code that works, then incorporate into renderPlot
-ggplot(faithful, aes(x = eruptions)) +
-  geom_histogram(aes(y = ..density..), 
-                 bins = 15,
-                 fill = "white", colour = "black") +
-  geom_density(adjust = 1.2, colour = "blue") +
-  labs(x = "Duration (minutes)", 
-       title = "Geyser eruption duration")
-<<<<<<< HEAD
-=======
-```
-
-
-# NAME ANALYSIS
-
-## Inputs {.sidebar}
 
 ```{r, echo=FALSE}
-inputPanel(
-  selectInput("n_breaks2", label = "Number of bins:",
-              choices = c(5, 10, 15, 20, 25, 30), selected = 15),
-  
-  sliderInput("bw_adjust2", label = "Bandwidth adjustment:",
-              min = 0.1, max = 3, value = 1.2, step = 0.1)
-)
-```
-
-## Column
-
-```{r}
-mn_museums <- museums_sf |> 
-  filter(ADSTATE == "MN")
-
-ggplot() +
-  geom_sf(data = mn_sf) +
-  geom_sf(data = mn_museums, size = 0.1) +
-  labs(
-    title = "Museums in Minnesota"
-  ) +
-  theme_map()
-```
-
-### Geyser Eruption Duration
-
-```{r echo = FALSE}
 renderPlot({
-  ggplot(faithful, aes(x = eruptions)) +
-    geom_histogram(aes(y = ..density..), 
-                   bins = as.numeric(input$n_breaks2),
-                   fill = "white", colour = "black") +
-    geom_density(adjust = input$bw_adjust2, colour = "blue") +
-    labs(x = "Duration (minutes)", 
-         title = "Geyser eruption duration")
+  museums |> 
+  count(ADSTATE) |> 
+  rename(State = n) |>
+  left_join(us_states) |> 
+  mutate(
+    Population = State / (total_pop_15 / as.numeric(AREA)),
+    Area = log(State / as.numeric(AREA)),
+  ) |> 
+  st_as_sf() |> 
+  ggplot() +
+  geom_sf(aes_string(fill = input$input_var))
 })
 ```
 
-```{r, eval = FALSE, include = FALSE}
-# First write code that works, then incorporate into renderPlot
-ggplot(faithful, aes(x = eruptions)) +
-  geom_histogram(aes(y = ..density..), 
-                 bins = 15,
-                 fill = "white", colour = "black") +
-  geom_density(adjust = 1.2, colour = "blue") +
-  labs(x = "Duration (minutes)", 
-       title = "Geyser eruption duration")
->>>>>>> 4b17d2453a041124a0bc676bed8ba43dc621fe85
+
+```{r, echo=FALSE}
+renderPlot({
+  state_var = input$input_state
+county_var = input$input_county
+state_sf = counties |> 
+  filter(STATEFP == state_var)
+if (county_var != "") {
+  state_sf = state_sf |> 
+    filter(NAME == county_var) 
+}
+museums_sf |>
+  filter(ADSTATE == state_var) |>
+  st_intersection(state_sf) |> 
+ggplot() +
+  geom_sf(data = state_sf) +
+  geom_sf(size = 0.1) +
+  labs(
+    title = str_c("Museums in ", county_var, " ", state_var)
+  ) +
+  theme_map()
+})
+
+beep()
 ```
+
+Moran's I of counties
+Point-pattern analysis density analysis
+household_income
+population_change
+zip codes
+
+# Explore
+
+```{r echo = FALSE}
+tmap_mode("view")
+tm_shape(museums_sf) +
+  tm_dots(col = "DISCIPLINE", shape = "DISCIPLINE", alpha = 0.5, size = 0.1)
+
+```
+
+# Minneseums
+
+Make interactive map of MN for Fay's Tripadvisor
+```{r}
+tmap_mode("view")
+museums_sf |> 
+  filter(ADSTATE == "MN") |> 
+tm_shape() +
+  tm_dots(col = "DISCIPLINE", shape = "DISCIPLINE", alpha = 0.5, size = 0.1)+
+tm_shape(st_union(mn_sf)) + 
+  tm_borders(col = "red", lwd = 2) 
+```
+
+# Limitations
+
