@@ -19,12 +19,13 @@ library(beepr)
 library(tigris)
 library(spData)
 data(us_states)
+library(raster)
 
 museums <- read_csv("Data/museums_tidy.csv") 
 museums_sf <- museums |> filter(!is.na(LONGITUDE)) |> filter(!is.na(LATITUDE)) |>  st_as_sf(coords = c("LONGITUDE", "LATITUDE"), remove = FALSE) |> st_set_crs(4326) |> st_transform(4269)
 mn_sf <- st_read("Data/shp_bdry_counties_in_minnesota/mn_county_boundaries.shp") |> st_transform(4326)
 
-counties <- st_read("Data/tl_2023_us_county/tl_2023_us_county.shp") |>
+counties <- st_read("Data/cb_2023_us_county_5m/cb_2023_us_county_5m.shp") |>
   # as.data.frame() |> 
   mutate(
     STATEFP = fips(STATEFP, to = 'Abbreviation')
@@ -161,7 +162,10 @@ inputPanel(
               choices = c("State", "Population", "Area"), selected = "State"),
   
   sliderInput("bw_adjust2", label = "Bandwidth adjustment:",
-              min = 0.1, max = 3, value = 1.2, step = 0.1)
+              min = 0.1, max = 3, value = 1.2, step = 0.1),
+  
+  selectInput("input_state", label = "State:",
+              choices = c(as.character(us_states$ADSTATE)), selected = "MN"),
 )
 ```
 
@@ -181,43 +185,26 @@ renderPlot({
   ggplot() +
   geom_sf(aes_string(fill = input$input_var))
 })
-
-beep()
-```
-
-```{r}
-museums |> 
-  count(ADSTATE) |> 
-  rename(n_museums = n) |>
-  left_join(us_states) |> 
-  st_as_sf() |> 
-  ggplot() +
-  geom_sf(aes(fill = n_museums))
-beep()
-```
-
-```{r}
-museums |> 
-  count(ADSTATE) |> 
-  rename(n_museums = n) |>
-  left_join(us_states) |> 
-  st_as_sf() |> 
-  ggplot() +
-  geom_sf(aes(fill = log(n_museums / as.numeric(AREA))))
-beep()
 ```
 
 
 ```{r}
-# museums_sf |> 
-#   filter(ADSTATE == input_state) |> 
-# ggplot() +
-#   geom_sf(data = mn_sf) +
-#   geom_sf(size = 0.1) +
-#   labs(
-#     title = "Museums in Minnesota"
-#   ) +
-#   theme_map()
+renderPlot({
+  state_var = input$input_state
+state_sf = counties |> 
+  filter(STATEFP == state_var)
+museums_sf |>
+  filter(ADSTATE == state_var) |>
+  st_intersection(state_sf) |> 
+ggplot() +
+  geom_sf(data = state_sf) +
+  geom_sf(size = 0.1) +
+  labs(
+    title = str_c("Museums in ", state_var)
+  ) +
+  theme_map()
+})
+beep()
 ```
 
 ### Geyser Eruption Duration
