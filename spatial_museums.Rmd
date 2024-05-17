@@ -1,0 +1,246 @@
+---
+title: "Museums"
+output: flexdashboard::flex_dashboard
+runtime: shiny
+---
+# Libraries and Data
+
+```{r global, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggspatial)
+library(sf)
+library(ggthemes)
+library(dplyr)
+library(cdlTools)
+library(ggrepel)
+library(gghighlight)
+library(beepr)
+library(tigris)
+library(spData)
+data(us_states)
+
+museums <- read_csv("Data/museums_tidy.csv") 
+museums_sf <- museums |> filter(!is.na(LONGITUDE)) |> filter(!is.na(LATITUDE)) |>  st_as_sf(coords = c("LONGITUDE", "LATITUDE"), remove = FALSE) |> st_set_crs(4326) |> st_transform(4269)
+mn_sf <- st_read("Data/shp_bdry_counties_in_minnesota/mn_county_boundaries.shp") |> st_transform(4326)
+
+counties <- st_read("Data/tl_2023_us_county/tl_2023_us_county.shp") |>
+  # as.data.frame() |> 
+  mutate(
+    STATEFP = fips(STATEFP, to = 'Abbreviation')
+  )
+
+us_states <- us_states |> 
+  mutate(
+    ADSTATE = fips(GEOID, to = "Abbreviation")
+  )
+```
+
+# About
+
+## Column {data-width = 200}
+
+**Introduction**
+
+![](img/museum1.jpg)
+
+Food deserts are areas with limited to no access to nutrition. There have been many analyses of the food disparity globally and nationally, even manifesting in developed urban spaces like Chicago. Analyses have found an intimate relationship between food disparities and race.
+
+Being inspired by these accounts, we were curious to see if there was such a thing as a museum desert. While they are not as essential as food, museums offer important educational information as well as being sources of entertainment. This is important as museums can offer insights from disciplines outside of one’s usual pursuits, offer a more specialised investigation of a certain topic, or provide information that are excluded by institutional bias. Are museums really impactful? Does having one near you improve the quality of life or of education? Who is likely to have access to a museum, and how costly would it be?
+
+------------------------------------------------------------------------
+
+**Data set Information**
+
+There are 7 categories of museums regulated by the IMLS. For the `DISCIPLINE`, each code corresponds to a category
+
+| CODE | DISCIPLINE                                  |
+|------|---------------------------------------------|
+| ART  | Art Museums                                 |
+| CMU  | Children Museums                            |
+| HST  | History Museums                             |
+| NAT  | Natural History & Natural Science Museums   |
+| SCI  | Science & Technology Museums & Planetariums |
+| GMU  | Uncategorized or General Museums            |
+| HSC  | Historic Preservation                       |
+
+# Discipline Distribution
+
+## Inputs {.sidebar}
+
+```{r, echo=FALSE}
+#distinct_discipline <- distinct(museums$DISCIPLINE)
+inputPanel(
+  selectInput("state", label = "State",
+              choices = museums$ADSTATE, selected = NULL),
+  radioButtons(
+    "discipline",
+    label = "Discipline",
+    choices = unique(museums$DISCIPLINE),
+    selected = NULL,
+    inline = FALSE,
+    width = NULL,
+    choiceNames = NULL,
+    choiceValues = NULL
+  )
+)
+```
+
+## Column
+
+```{r, echo=FALSE}
+renderPlot({
+  if (input$state != ""){
+    discipline1 <- museums |> filter(ADSTATE == input$state)|>
+    group_by(DISCIPLINE) |>
+    summarize(n = n()) 
+    title1 <- paste("Discipline Distribution in ",input$state)
+  }
+  else{
+   discipline1 <- museums |>
+    group_by(DISCIPLINE) |>
+    summarize(n = n()) 
+   title1 <- "Discipline Distribution in the USA"
+  }
+  
+    discipline1|>
+    ggplot(aes(x = fct_reorder(DISCIPLINE,n), y = n)) +
+    geom_col(aes(fill = DISCIPLINE)) +
+    coord_flip(xlim = NULL, ylim = NULL, expand = TRUE, clip = "on")+
+    labs(x = "Number of Organizations", y = "Discipline", title = title1)
+})
+```
+
+
+
+```{r, echo = FALSE}
+renderPlot({
+  
+   discipline2 <- museums |>
+    filter(DISCIPLINE == input$discipline)|>
+    group_by(ADSTATE) |>
+    summarize(num = n()) |>
+    slice_max(n,10)
+   title1 <- "Discipline Distribution in the USA"
+  
+    discipline2|>
+    ggplot(aes(x = fct_reorder(ADSTATE,num), y = num)) +
+    geom_col()+
+    gghighlight(ADSTATE == input$state) +
+    labs(x="State") 
+})
+```
+
+
+
+```{r, echo = FALSE}
+renderPlot({
+  
+   discipline2 <- museums |>
+    filter(DISCIPLINE == input$discipline)|>
+    group_by(ADSTATE) |>
+    summarize(num = n()) |>
+    slice_max(n,10)
+   title1 <- "Discipline Distribution in the USA"
+  
+    discipline2|>
+    ggplot(aes(x = fct_reorder(ADSTATE,num), y = num)) +
+    geom_col()+
+    gghighlight(ADSTATE == input$state) +
+    labs(x="State") 
+})
+```
+
+# Maps
+
+## Inputs {.sidebar}
+
+```{r, echo=FALSE}
+inputPanel(
+  selectInput("input_var", label = "Number of museums by:",
+              choices = c("State", "Population", "Area"), selected = "State"),
+  
+  sliderInput("bw_adjust2", label = "Bandwidth adjustment:",
+              min = 0.1, max = 3, value = 1.2, step = 0.1)
+)
+```
+
+## Column
+
+```{r}
+renderPlot({
+  museums |> 
+  count(ADSTATE) |> 
+  rename(State = n) |>
+  left_join(us_states) |> 
+  mutate(
+    Population = State / (total_pop_15 / as.numeric(AREA)),
+    Area = log(State / as.numeric(AREA)),
+  ) |> 
+  st_as_sf() |> 
+  ggplot() +
+  geom_sf(aes_string(fill = input$input_var))
+})
+
+beep()
+```
+
+```{r}
+museums |> 
+  count(ADSTATE) |> 
+  rename(n_museums = n) |>
+  left_join(us_states) |> 
+  st_as_sf() |> 
+  ggplot() +
+  geom_sf(aes(fill = n_museums))
+beep()
+```
+
+```{r}
+museums |> 
+  count(ADSTATE) |> 
+  rename(n_museums = n) |>
+  left_join(us_states) |> 
+  st_as_sf() |> 
+  ggplot() +
+  geom_sf(aes(fill = log(n_museums / as.numeric(AREA))))
+beep()
+```
+
+
+```{r}
+# museums_sf |> 
+#   filter(ADSTATE == input_state) |> 
+# ggplot() +
+#   geom_sf(data = mn_sf) +
+#   geom_sf(size = 0.1) +
+#   labs(
+#     title = "Museums in Minnesota"
+#   ) +
+#   theme_map()
+```
+
+### Geyser Eruption Duration
+
+```{r echo = FALSE}
+renderPlot({
+  ggplot(faithful, aes(x = eruptions)) +
+    geom_histogram(aes(y = ..density..), 
+                   bins = as.numeric(input$n_breaks2),
+                   fill = "white", colour = "black") +
+    geom_density(adjust = input$bw_adjust2, colour = "blue") +
+    labs(x = "Duration (minutes)", 
+         title = "Geyser eruption duration")
+})
+```
+
+```{r, eval = FALSE, include = FALSE}
+# First write code that works, then incorporate into renderPlot
+ggplot(faithful, aes(x = eruptions)) +
+  geom_histogram(aes(y = ..density..), 
+                 bins = 15,
+                 fill = "white", colour = "black") +
+  geom_density(adjust = 1.2, colour = "blue") +
+  labs(x = "Duration (minutes)", 
+       title = "Geyser eruption duration")
+```
