@@ -80,11 +80,6 @@ locations_mn <- locations_mn |> mutate(id_tripadvisor = location_id) |>
 ```
 
 ```{r}
-trip_advisor_details <- tibble(name = mn_museum$COMMONNAME, lat = mn_museum$LATITUDE, long = mn_museum$LONGITUDE)
-location_id <- double(length=length(mn_museum$COMMONNAME))
-```
-
-```{r}
 tripadvisor_detail <- function(location_id){
   url_detail <- paste("https://api.content.tripadvisor.com/api/v1/location/",format(location_id),"/details",sep="")
 
@@ -97,10 +92,41 @@ tripadvisor_detail <- function(location_id){
   response <- VERB("GET", url_detail, query = queryString_detail, content_type("application/octet-stream"), accept("application/json"))
   
   detail <- content(response, type = "application/json")
-  print(detail)
+  return(detail)
 }
+```
+
+```{r}
+tripadvisor_reviews <- vector(length=length(locations_mn))
+phone_num <- vector(length=length(locations_mn))
+website <- vector(length=length(locations_mn))
+writing_review <- vector(length=length(locations_mn)) 
+ranking_string <- vector(length=length(locations_mn))
+rating <- vector(length=length(locations_mn))
+rating_count <- vector(length=length(locations_mn))
+open_hour <- vector(length=length(locations_mn))
 
 ```
+
+```{r}
+for (i in 1:3){
+  tripadvisor_content <- tripadvisor_detail(locations_mn$id_tripadvisor[[i]])
+  #web url
+  tripadvisor_web[[i]] <- tripadvisor_content$web_url
+  #phone number
+  phone_num[[i]] <- tripadvisor_content$phone
+  #writing reviews
+  writing_review[[i]] <- tripadvisor_content$write_review
+  #ranking string
+  ranking_string[[i]] <- tripadvisor_content$review_rating_count
+  #rating
+  rating[[i]] <- tripadvisor_content$rating
+  
+  
+  
+}
+```
+
 
 
 
