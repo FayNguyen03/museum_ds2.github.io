@@ -231,8 +231,7 @@ beep()
 # Explore
 
 ```{r echo = FALSE}
-tmap_mode("view") 
-tm_basemap() +
+
 tm_shape(museums_sf) +
   tm_dots(col = "DISCIPLINE", shape = "DISCIPLINE", alpha = 0.5, size = 0.1)
 
