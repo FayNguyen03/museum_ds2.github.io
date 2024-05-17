@@ -3,7 +3,6 @@ title: "Museums"
 output: flexdashboard::flex_dashboard
 runtime: shiny
 ---
-# Libraries and Data
 
 ```{r global, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -227,12 +226,33 @@ ggplot() +
 beep()
 ```
 
+Moran's I of counties
+Point-pattern analysis density analysis
+household_income
+population_change
+zip codes
 
 # Explore
 
 ```{r echo = FALSE}
-
+tmap_mode("view")
 tm_shape(museums_sf) +
   tm_dots(col = "DISCIPLINE", shape = "DISCIPLINE", alpha = 0.5, size = 0.1)
 
 ```
+
+# Minneseums
+
+Make interactive map of MN for Fay's Tripadvisor
+```{r}
+tmap_mode("view")
+museums_sf |> 
+  filter(ADSTATE == "MN") |> 
+tm_shape() +
+  tm_dots(col = "DISCIPLINE", shape = "DISCIPLINE", alpha = 0.5, size = 0.1)+
+tm_shape(st_union(mn_sf)) + 
+  tm_borders(col = "red", lwd = 2) 
+```
+
+# Limitations
+
