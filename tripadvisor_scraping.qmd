@@ -17,16 +17,14 @@ url <- "https://api.content.tripadvisor.com/api/v1/location/search"
 ```
 
 ```{r}
-tripAdvisorAPI <- function(name, long, lat, state, postal) {
-
-  
+tripAdvisorAPI <- function(name, lat, long, state, postal) {
   queryString <- list(
     language = "en",
     key = API_KEY,
     searchQuery = name,
-    latLong = str(lat) + str(long)
+    latLong = paste(format(lat, nsmall = 5),",",format(long, nsmall = 5),sep="")
   )
-  
+  #print(paste(format(lat, nsmall = 5),",",format(long, nsmall = 5),sep=""))
   response <- GET(url, query = queryString, add_headers(Accept = "application/json"))
   
   if (http_error(response)) {
@@ -38,31 +36,30 @@ tripAdvisorAPI <- function(name, long, lat, state, postal) {
   if (num_results == 0) {
     return(0)
   }
-  for (i in seq_len(num_results)) {
+  
+  for (i in 1:num_results) {
     address_obj <- detail$data[[i]]$address_obj
     #print(address_obj)
-    
-    if (!is.na(address_obj$country)) {
-      if(address_obj$country == "United States"){
-      if (!is.na(address_obj$state)) {
-        if(address_obj$state == state){
-          return(detail$data[[i]]$location_id)
-        }
-      }
-      
-      else {
-        if (!is.na(address_obj$postalcode) && substr(address_obj$postalcode, 1, 5) == postal) {
-          return(detail$data[[i]]$location_id)
-        }
-      }
-      }
+    if (!is.null(address_obj$country) && !is.na(address_obj$country) && address_obj$country != "United States") {
+      next
     }
+    if (!is.null(address_obj$postalcode)  && substr(address_obj$postalcode, 1, 5) == postal) {
+      return(detail$data[[i]]$location_id)
+    }
+    
+    if (!is.null(address_obj$state)  && address_obj$state == state) {
+      return(detail$data[[i]]$location_id)
+    }
+    
   }
-  
+  print("No compatible place")
   return(0)
 }
 ```
 
+```{r}
+tripAdvisorAPI("MOBILE MUSEUM OF ART", 30.70401, -88.15462, "Alabama",36689)
+```
 
 
 ```{r}
@@ -71,15 +68,38 @@ location_id <- double(length=length(mn_museum$COMMONNAME))
 ```
 
 ```{r}
-for (i in 307:length(mn_museum$COMMONNAME)){
-  location_id[i] <-as.numeric( tripAdvisorAPI(mn_museum$COMMONNAME[i], mn_museum$LONGITUDE[i], mn_museum$LATITUDE[i], "Minnesota",mn_museum$ADZIP5[i]))
+for (i in 1:length(mn_museum$COMMONNAME)){
+  location_id[i] <-as.numeric( tripAdvisorAPI(mn_museum$COMMONNAME[i], mn_museum$LATITUDE[i], mn_museum$LONGITUDE[i], "Minnesota",mn_museum$ADZIP5[i]))
   
 }
-
 ```
 
 ```{r}
-locations_mn <- locations_mn |> mutate(id_tripadvisor = location_id) 
+locations_mn <- locations_mn |> mutate(id_tripadvisor = location_id) |>
+  filter(id_tripadvisor != 0)
+```
+
+```{r}
+trip_advisor_details <- tibble(name = mn_museum$COMMONNAME, lat = mn_museum$LATITUDE, long = mn_museum$LONGITUDE)
+location_id <- double(length=length(mn_museum$COMMONNAME))
+```
+
+```{r}
+tripadvisor_detail <- function(location_id){
+  url_detail <- paste("https://api.content.tripadvisor.com/api/v1/location/",format(location_id),"/details",sep="")
+
+  queryString_detail <- list(
+    language = "en",
+    currency = "USD",
+    key = API_KEY
+  )
+  
+  response <- VERB("GET", url_detail, query = queryString_detail, content_type("application/octet-stream"), accept("application/json"))
+  
+  detail <- content(response, type = "application/json")
+  print(detail)
+}
+
 ```
 
 
