@@ -20,6 +20,7 @@ library(tigris)
 library(spData)
 data(us_states)
 library(raster)
+library(tmap)
 
 museums <- read_csv("Data/museums_tidy.csv") 
 museums_sf <- museums |> filter(!is.na(LONGITUDE)) |> filter(!is.na(LATITUDE)) |>  st_as_sf(coords = c("LONGITUDE", "LATITUDE"), remove = FALSE) |> st_set_crs(4326) |> st_transform(4269)
@@ -227,27 +228,12 @@ beep()
 ```
 
 
-### Geyser Eruption Duration
+# Explore
 
 ```{r echo = FALSE}
-renderPlot({
-  ggplot(faithful, aes(x = eruptions)) +
-    geom_histogram(aes(y = ..density..), 
-                   bins = as.numeric(input$n_breaks2),
-                   fill = "white", colour = "black") +
-    geom_density(adjust = input$bw_adjust2, colour = "blue") +
-    labs(x = "Duration (minutes)", 
-         title = "Geyser eruption duration")
-})
-```
+tmap_mode("view") 
+tm_basemap() +
+tm_shape(museums_sf) +
+  tm_dots(col = "DISCIPLINE", shape = "DISCIPLINE", alpha = 0.5, size = 0.1)
 
-```{r, eval = FALSE, include = FALSE}
-# First write code that works, then incorporate into renderPlot
-ggplot(faithful, aes(x = eruptions)) +
-  geom_histogram(aes(y = ..density..), 
-                 bins = 15,
-                 fill = "white", colour = "black") +
-  geom_density(adjust = 1.2, colour = "blue") +
-  labs(x = "Duration (minutes)", 
-       title = "Geyser eruption duration")
 ```
