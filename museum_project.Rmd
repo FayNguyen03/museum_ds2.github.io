@@ -1,6 +1,13 @@
 ---
 title: "Museums"
-output: flexdashboard::flex_dashboard
+output: 
+  flexdashboard::flex_dashboard:
+    theme:
+      version: 4
+      bg: "#101010"
+      fg: "#FDF7F7" 
+      primary: "#a9c5a0"
+      navbar-bg: "#020402"
 runtime: shiny
 ---
 
@@ -20,6 +27,8 @@ library(spData)
 data(us_states)
 library(raster)
 library(tmap)
+library(shiny)
+library(flexdashboard)
 
 museums <- read_csv("Data/museums_tidy.csv") 
 museums_sf <- museums |> filter(!is.na(LONGITUDE)) |> filter(!is.na(LATITUDE)) |>  st_as_sf(coords = c("LONGITUDE", "LATITUDE"), remove = FALSE) |> st_set_crs(4326) |> st_transform(4269)
@@ -35,6 +44,8 @@ us_states <- us_states |>
   mutate(
     ADSTATE = fips(GEOID, to = "Abbreviation")
   )
+
+minneseum <- read_csv("Data/tripadvisor_data.csv")
 ```
 
 # About
@@ -65,92 +76,102 @@ There are 7 categories of museums regulated by the IMLS. For the `DISCIPLINE`, e
 | GMU  | Uncategorized or General Museums            |
 | HSC  | Historic Preservation                       |
 
+
 # Discipline Distribution
 
 ## Inputs {.sidebar}
 
 ```{r, echo=FALSE}
-#distinct_discipline <- distinct(museums$DISCIPLINE)
 inputPanel(
-  selectInput("state", label = "State",
-              choices = museums$ADSTATE, selected = NULL),
+  selectInput(inputId = "unit", label = "Unit of Area:",
+                choices = c("State", "AAMREG", "BEAREG", "LOCALE4"),
+                selected = "State"),
+  uiOutput("dynamicInput"),
   radioButtons(
-    "discipline",
-    label = "Discipline",
-    choices = unique(museums$DISCIPLINE),
-    selected = NULL,
-    inline = FALSE,
-    width = NULL,
-    choiceNames = NULL,
-    choiceValues = NULL
-  )
+      "discipline",
+      label = "Discipline",
+      choices = unique(museums$DISCIPLINE),
+      selected = NULL,
+      inline = FALSE,
+      width = NULL,
+      choiceNames = NULL,
+      choiceValues = NULL
+    )
+)
+
+```
+
+```{r server, echo = FALSE}
+inputPanel(
+  dynamicInput <- renderUI({
+    if (input$unit == "State") {
+      selectInput("state", "State", choices = museums$ADSTATE, selected = "MN")
+    } 
+    else if (input$unit == "AAMREG") {
+      selectInput("aamreg", "AAMREG", choices = museums$AAMREG , selected = "1")
+    } 
+    else if (input$unit == "BEAREG") {
+      selectInput("beareg", "BEAREG", choices = museums$BEAREG, selected = "1")
+    } 
+    else if (input$unit == "LOCALE4") {
+      selectInput("locale4", "LOCALE4", choices = museums$LOCALE4, selected = "1")
+    }
+  })
 )
 ```
 
 ## Column
 
 ```{r, echo=FALSE}
+
 renderPlot({
-  if (input$state != ""){
-    discipline1 <- museums |> filter(ADSTATE == input$state)|>
-    group_by(DISCIPLINE) |>
-    summarize(n = n()) 
-    title1 <- paste("Discipline Distribution in ",input$state)
+  if(input$unit == "State"){
+    if (input$state != ""){
+      discipline1 <- museums |> filter(ADSTATE == input$state)|>
+      group_by(DISCIPLINE) |>
+      summarize(n = n()) 
+      title1 <- paste(toupper("Discipline Distribution in"),input$state)
+    }
+    else{
+       discipline1 <- museums |>
+        group_by(DISCIPLINE) |>
+        summarize(n = n()) 
+       regions
+       title1 <- toupper("Discipline Distribution in the USA")
+    }
   }
-  else{
-   discipline1 <- museums |>
-    group_by(DISCIPLINE) |>
-    summarize(n = n()) 
-   title1 <- "Discipline Distribution in the USA"
+  else if (input$unit == "AAMREG"){
+      discipline1 <- museums |> filter(AAMREG == input$aamreg)|>
+      group_by(DISCIPLINE) |>
+      summarize(n = n()) 
+      aamreg <- c("New England", "Mid-Atlantic", "Southeastern", "Midwest", "Mountain Plains", "Western")
+      title1 <- paste("Discipline Distribution in",aamreg[as.numeric(input$aamreg)],"region")
   }
-  
+  else if (input$unit == "BEAREG"){
+      discipline1 <- museums |> filter(BEAREG == input$beareg)|>
+      group_by(DISCIPLINE) |>
+      summarize(n = n()) 
+      beareg <- c("New England", "Mid-East", "Great Lakes", "Plains", "Southest", "Southwest", "Rocky Mountains", "Far West")
+      title1 <- paste("Discipline Distribution in",beareg[as.numeric(input$beareg)],"region")
+  }
+  else if (input$unit == "LOCALE4"){
+      discipline1 <- museums |> filter(LOCALE4 == input$locale4)|>
+      group_by(DISCIPLINE) |>
+      summarize(n = n()) 
+      aamreg <- c("City", "Suburb", "Town", "Rural")
+      title1 <- paste("Discipline Distribution in",aamreg[as.numeric(input$locale4)],"territories")
+  }
     discipline1|>
     ggplot(aes(x = fct_reorder(DISCIPLINE,n), y = n)) +
     geom_col(aes(fill = DISCIPLINE)) +
     coord_flip(xlim = NULL, ylim = NULL, expand = TRUE, clip = "on")+
-    labs(x = "Number of Organizations", y = "Discipline", title = title1)
+    labs(x = "Number of Organizations", y = "Discipline", title = title1) +
+    theme_minimal()
 })
 ```
 
 
 
-```{r, echo = FALSE}
-renderPlot({
-  
-   discipline2 <- museums |>
-    filter(DISCIPLINE == input$discipline)|>
-    group_by(ADSTATE) |>
-    summarize(num = n()) |>
-    slice_max(n,10)
-   title1 <- "Discipline Distribution in the USA"
-  
-    discipline2|>
-    ggplot(aes(x = fct_reorder(ADSTATE,num), y = num)) +
-    geom_col()+
-    gghighlight(ADSTATE == input$state) +
-    labs(x="State") 
-})
-```
-
-
-
-```{r, echo = FALSE}
-renderPlot({
-  
-   discipline2 <- museums |>
-    filter(DISCIPLINE == input$discipline)|>
-    group_by(ADSTATE) |>
-    summarize(num = n()) |>
-    slice_max(n,10)
-   title1 <- "Discipline Distribution in the USA"
-  
-    discipline2|>
-    ggplot(aes(x = fct_reorder(ADSTATE,num), y = num)) +
-    geom_col()+
-    gghighlight(ADSTATE == input$state) +
-    labs(x="State") 
-})
-```
 
 # Maps
 
@@ -244,14 +265,24 @@ tm_shape(museums_sf) +
 # Minneseums
 
 Make interactive map of MN for Fay's Tripadvisor
+
 ```{r}
 tmap_mode("view")
-museums_sf |> 
+
+# Create the map
+museums_map <- museums_sf |> 
   filter(ADSTATE == "MN") |> 
-tm_shape() +
-  tm_dots(col = "DISCIPLINE", shape = "DISCIPLINE", alpha = 0.5, size = 0.1)+
-tm_shape(st_union(mn_sf)) + 
-  tm_borders(col = "red", lwd = 2) 
+  tm_shape() +
+  tm_dots(
+    col = "DISCIPLINE", 
+    shape = "DISCIPLINE", 
+    alpha = 0.5, 
+    size = 0.1
+  ) +
+  tm_shape(st_union(mn_sf)) + 
+  tm_borders(col = "black", lwd = 3)
+
+museums_map
 ```
 
 # Limitations
