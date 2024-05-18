@@ -61,8 +61,11 @@ minneseum <- read_csv("Data/tripadvisor_data.csv")
 
 Food deserts are areas with limited to no access to nutrition. There have been many analyses of the food disparity globally and nationally, even manifesting in developed urban spaces like Chicago. Analyses have found an intimate relationship between food disparities and race.
 
-Being inspired by these accounts, we were curious to see if there was such a thing as a museum desert. While they are not as essential as food, museums offer important educational information as well as being sources of entertainment. This is important as museums can offer insights from disciplines outside of one’s usual pursuits, offer a more specialised investigation of a certain topic, or provide information that are excluded by institutional bias. 
 
+Being inspired by these accounts, we were curious to see if there was such a thing as a museum desert. While they are not as essential as food, museums offer important educational information as well as being sources of entertainment. This is important as museums can offer insights from disciplines outside of one’s usual pursuits, offer a more specialised investigation of a certain topic, or provide information that are excluded by institutional bias.
+
+This project aims to explore the diversity and quantity of museums in the United States, in an attempt to visualise trends in spatial distribution, discipline, and museum-goers' experiences.
+>>>>>>> c4c333e716b54c9c1bb8375bb39dd6aa4838024e
 
 ------------------------------------------------------------------------
 
@@ -177,11 +180,6 @@ renderPlot({
 ```
 
 
-```{r}
-
-```
-
-
 # Nationwide exploration
 
 ## Inputs {.sidebar}
@@ -206,6 +204,7 @@ reactive({
 ```
 
 ## Column
+
 ```{r, echo=FALSE}
 renderPlot({
   museums |> 
@@ -227,7 +226,8 @@ renderPlot({
 
 ## Inputs {.sidebar}
 
-```{r, echo = FALSE}
+
+```{r, echo=FALSE}
 inputPanel({
   selectInput("input_state", label = "State:",
               choices = c(as.character(us_states$ADSTATE)), selected = "MN")
@@ -316,8 +316,14 @@ zip codes
 
 ```{r echo = FALSE}
 tmap_mode("view")
-tm_shape(museums_sf) +
-  tm_dots(col = "DISCIPLINE", shape = "DISCIPLINE", alpha = 0.5, size = 0.1)
+museums_sf |> 
+  mutate(
+    COMMONNAME = iconv(COMMONNAME, to = "utf-8"),
+    ADSTREET = iconv(ADSTREET, to = "utf-8"),
+    ADCITY = iconv(ADCITY, to = "utf-8"),
+  ) |> 
+tm_shape() +
+  tm_dots(col = "DISCIPLINE", alpha = 0.5, size = 0.1, id = "COMMONNAME", popup.vars = c("Website:" = "WEBURL", "Address:" = "ADSTREET", "City:" = "ADCITY", "State:" = "ADSTATE", "ZIP:" = "ADZIP5"))
 
 ```
 
@@ -330,15 +336,14 @@ minneseums_sf <- minneseum |> filter(!is.na(lat)) |> filter(!is.na(long)) |>  st
   mutate(name = str_replace(name,"<a0>"," "))
 ```
 
-
-```{r}
+```{r, echo = FALSE}
 library(leaflet)
 library(leaflet.extras)
 
 popup_content <- function(name, rate, operation, website_1, address, city) {
   rate_val <- ifelse(rate != FALSE, paste0("<p><strong>Rate (TripAdvisor):</strong> ", rate, "</p>"), "<p><strong>Rate (TripAdvisor):</strong> Not Available</p>")
-  open_hour_val <- ifelse(operation != FALSE, paste0("<p><strong>Open Hour:</strong> ", operation, "</p>"), "")
-  web_val <- ifelse(website_1 != FALSE, paste0("<a href=\"", website_1, "\">Link</a>"), "")
+  open_hour_val <- ifelse(operation != FALSE, paste0("<p><strong>Open Hour:</strong> ", operation, "</p>"), "<p>Open Hour: Not Available</p>")
+  web_val <- ifelse(website_1 != FALSE, paste0("<a href=\"", website_1, "\">Link</a>"), "<p>Link: Not Available</p>")
   
   popupContent <- mapply(function(name_val, rate_val, open_hour_val, web_val, address_val, city_val) {
     paste0(
