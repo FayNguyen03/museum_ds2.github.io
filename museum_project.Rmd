@@ -305,17 +305,7 @@ renderValueBox({
 beep()
 ```
 
-<<<<<<< HEAD
-=======
-Moran's I of counties Point-pattern analysis density analysis household_income population_change zip codes
 
-Moran's I of counties
-Point-pattern analysis density analysis
-household_income
-population_change
-zip codes
-
->>>>>>> 50e336cc231d7c3270feb8adf8d134a820200919
 # Explore
 
 ```{r echo = FALSE}
@@ -389,8 +379,8 @@ map
 
 # Limitations
 
-<<<<<<< HEAD
+
 Ecological fallacy
-=======
+
 - TripAdvisor API: Due to the limitation in the number of API calls, we can only fetch the data of the museums in Minnesota. 
->>>>>>> 50e336cc231d7c3270feb8adf8d134a820200919
+
