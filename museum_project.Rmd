@@ -27,8 +27,13 @@ library(spData)
 data(us_states)
 library(raster)
 library(tmap)
+<<<<<<< HEAD
 library(shiny)
 library(flexdashboard)
+=======
+library(spatialreg)
+library(spdep)
+>>>>>>> ad4f8fdf9b6109889f0ffc9dd539370e2e0e4b5e
 
 museums <- read_csv("Data/museums_tidy.csv") 
 museums_sf <- museums |> filter(!is.na(LONGITUDE)) |> filter(!is.na(LATITUDE)) |>  st_as_sf(coords = c("LONGITUDE", "LATITUDE"), remove = FALSE) |> st_set_crs(4326) |> st_transform(4269)
@@ -37,7 +42,7 @@ mn_sf <- st_read("Data/shp_bdry_counties_in_minnesota/mn_county_boundaries.shp")
 counties <- st_read("Data/cb_2023_us_county_5m/cb_2023_us_county_5m.shp") |>
   # as.data.frame() |> 
   mutate(
-    STATEFP = fips(STATEFP, to = 'Abbreviation')
+    ADSTATE = fips(STATEFP, to = 'Abbreviation')
   )
 
 us_states <- us_states |> 
@@ -227,7 +232,7 @@ renderPlot({
   state_var = input$input_state
 county_var = input$input_county
 state_sf = counties |> 
-  filter(STATEFP == state_var)
+  filter(ADSTATE == state_var)
 if (county_var != "") {
   state_sf = state_sf |> 
     filter(NAME == county_var) 
@@ -246,6 +251,31 @@ ggplot() +
 
 beep()
 ```
+
+```{r}
+renderPlot({
+state_var = input$input_state
+
+counties_sf = counties |>
+  filter(ADSTATE == state_var)
+
+state_museums_sf = museums_sf |>
+  filter(ADSTATE == state_var)
+
+counties_sf$n = lengths(st_intersects(counties_sf, state_museums_sf))
+
+set.seed(1)
+counties_nb <- poly2nb(counties_sf, queen = FALSE)
+counties_nbw <- nb2listw(counties_nb, style = "W", zero.policy = TRUE)
+moran.mc(counties_sf$n, counties_nbw, nsim = 999) # Loop
+
+ggplot(counties_sf) +
+  geom_sf(aes(fill = n / ALAND))
+})
+
+beep()
+```
+
 
 Moran's I of counties
 Point-pattern analysis density analysis
