@@ -1,0 +1,12 @@
+name: museum_project
+title: museum_project
+username: faynguyen03
+account: faynguyen03
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 12027512
+bundleId: 8632154
+url: https://faynguyen03.shinyapps.io/museum_project/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE

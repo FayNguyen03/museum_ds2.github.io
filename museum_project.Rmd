@@ -5,9 +5,8 @@ output:
     theme:
       version: 4
       bg: "#101010"
-      fg: "#FDF7F7" 
-      primary: "#a9c5a0"
-      navbar-bg: "#020402"
+      fg: "white" 
+      primary: "#9d5c63"
 runtime: shiny
 ---
 
@@ -63,15 +62,17 @@ minneseum <- read_csv("Data/tripadvisor_data.csv")
 
 Food deserts are areas with limited to no access to nutrition. There have been many analyses of the food disparity globally and nationally, even manifesting in developed urban spaces like Chicago. Analyses have found an intimate relationship between food disparities and race.
 
+
 Being inspired by these accounts, we were curious to see if there was such a thing as a museum desert. While they are not as essential as food, museums offer important educational information as well as being sources of entertainment. This is important as museums can offer insights from disciplines outside of one’s usual pursuits, offer a more specialised investigation of a certain topic, or provide information that are excluded by institutional bias.
 
 This project aims to explore the diversity and quantity of museums in the United States, in an attempt to visualise trends in spatial distribution, discipline, and museum-goers' experiences.
+>>>>>>> c4c333e716b54c9c1bb8375bb39dd6aa4838024e
 
 ------------------------------------------------------------------------
 
-**Data set Information**
+ **Data set Information**
 
-There are 7 categories of museums regulated by the IMLS. For the `DISCIPLINE`, each code corresponds to a category
+We mainly focus on the dataset from [IMLS](https://www.imls.gov/research-evaluation/data-collection/museum-data-files). There are 7 categories of museums regulated by the IMLS, represented by the `DISCIPLINE` with each code corresponding to a specific category.
 
 | CODE | DISCIPLINE                                  |
 |------|---------------------------------------------|
@@ -82,7 +83,6 @@ There are 7 categories of museums regulated by the IMLS. For the `DISCIPLINE`, e
 | SCI  | Science & Technology Museums & Planetariums |
 | GMU  | Uncategorized or General Museums            |
 | HSC  | Historic Preservation                       |
-
 
 # Discipline Distribution
 
@@ -111,17 +111,20 @@ inputPanel(
 ```{r server, echo = FALSE}
 inputPanel(
   dynamicInput <- renderUI({
+    areg <- museums$AAMREG[museums$AAMREG!="NA"]
+    breg <- museums$BREG[museums$BREG!="NA"]
+    local <- museums$LOCALE4[museums$LOCALE4!="NA"]
     if (input$unit == "State") {
       selectInput("state", "State", choices = museums$ADSTATE, selected = "MN")
     } 
     else if (input$unit == "AAMREG") {
-      selectInput("aamreg", "AAMREG", choices = museums$AAMREG , selected = "1")
+      selectInput("aamreg", "AAMREG", choices = areg , selected = 1)
     } 
     else if (input$unit == "BEAREG") {
-      selectInput("beareg", "BEAREG", choices = museums$BEAREG, selected = "1")
+      selectInput("beareg", "BEAREG", choices = breg, selected = 2)
     } 
     else if (input$unit == "LOCALE4") {
-      selectInput("locale4", "LOCALE4", choices = museums$LOCALE4, selected = "1")
+      selectInput("locale4", "LOCALE4", choices = museums$LOCALE4, selected = 1)
     }
   })
 )
@@ -129,8 +132,8 @@ inputPanel(
 
 ## Column
 
-```{r, echo=FALSE}
 
+```{r, echo=FALSE}
 renderPlot({
   if(input$unit == "State"){
     if (input$state != ""){
@@ -169,13 +172,14 @@ renderPlot({
       title1 <- paste("Discipline Distribution in",aamreg[as.numeric(input$locale4)],"territories")
   }
     discipline1|>
-    ggplot(aes(x = fct_reorder(DISCIPLINE,n), y = n)) +
-    geom_col(aes(fill = DISCIPLINE)) +
-    coord_flip(xlim = NULL, ylim = NULL, expand = TRUE, clip = "on")+
-    labs(x = "Number of Organizations", y = "Discipline", title = title1) +
-    theme_minimal()
+      ggplot(aes(x = fct_reorder(DISCIPLINE,n), y = n)) +
+      geom_col(aes(fill = DISCIPLINE)) +
+      coord_flip(xlim = NULL, ylim = NULL, expand = TRUE, clip = "on")+
+      labs(y = "Number of Organizations", x = "Discipline", title = title1) +
+      theme_minimal()
 })
 ```
+
 
 # Nationwide exploration
 
@@ -189,14 +193,13 @@ inputPanel(
   
 ```
 
-
 ```{r, echo=FALSE}
   inputPanel(
     selectInput("input_county", label = "County:",
-              choices = c("", filter(counties, STATEFP == "MN")$NAME), selected = "All"),
+              choices = c("", filter(counties, ADSTATE == "MN")$NAME), selected = "All"),
 )
 reactive({
-          updateSelectInput(session, "input_county", choices = c("", filter(counties, STATEFP == input$input_state)$NAME), selected = "")
+          updateSelectInput(session, "input_county", choices = c("", filter(counties, ADSTATE == input$input_state)$NAME), selected = "")
     })
 
 ```
@@ -223,6 +226,7 @@ renderPlot({
 # State exploration
 
 ## Inputs {.sidebar}
+
 
 ```{r, echo=FALSE}
 inputPanel({
@@ -301,6 +305,17 @@ renderValueBox({
 beep()
 ```
 
+<<<<<<< HEAD
+=======
+Moran's I of counties Point-pattern analysis density analysis household_income population_change zip codes
+
+Moran's I of counties
+Point-pattern analysis density analysis
+household_income
+population_change
+zip codes
+
+>>>>>>> 50e336cc231d7c3270feb8adf8d134a820200919
 # Explore
 
 ```{r echo = FALSE}
@@ -318,25 +333,64 @@ tm_shape() +
 
 # Minneseums
 
-```{r, echo=FALSE}
-tmap_mode("view")
+Since we decided to delve in organizations in Minnesota, we integrated the TripAdvisor API to fetch some data about organizations, combining with the IMLS dataset show when the user is travelling a specific place in MN, they can find the organizations at that location and find valuable information.
 
-# Create the map
-museums_map <- museums_sf |> 
-  filter(ADSTATE == "MN") |> 
-  tm_shape() +
-  tm_dots(
-    col = "DISCIPLINE", 
-    shape = "DISCIPLINE", 
-    alpha = 0.5, 
-    size = 0.1
-  ) +
-  tm_shape(st_union(mn_sf)) + 
-  tm_borders(col = "black", lwd = 3)
+```{r}
+minneseums_sf <- minneseum |> filter(!is.na(lat)) |> filter(!is.na(long)) |>  st_as_sf(coords = c("long", "lat"), remove = FALSE) |> st_set_crs(4326) |> st_transform(4269) |>
+  mutate(name = str_replace(name,"<a0>"," "))
+```
 
-museums_map
+```{r, echo = FALSE}
+library(leaflet)
+library(leaflet.extras)
+
+popup_content <- function(name, rate, operation, website_1, address, city) {
+  rate_val <- ifelse(rate != FALSE, paste0("<p><strong>Rate (TripAdvisor):</strong> ", rate, "</p>"), "<p><strong>Rate (TripAdvisor):</strong> Not Available</p>")
+  open_hour_val <- ifelse(operation != FALSE, paste0("<p><strong>Open Hour:</strong> ", operation, "</p>"), "<p>Open Hour: Not Available</p>")
+  web_val <- ifelse(website_1 != FALSE, paste0("<a href=\"", website_1, "\">Link</a>"), "<p>Link: Not Available</p>")
+  
+  popupContent <- mapply(function(name_val, rate_val, open_hour_val, web_val, address_val, city_val) {
+    paste0(
+      "<h2>", name_val, "</h2>",
+      "<h4>", address_val, " ",city_val, "</h4>",
+      rate_val,
+      open_hour_val,
+      web_val
+    )
+  }, name, rate_val, open_hour_val, web_val, address, city)
+  
+  popupTemplate <- sprintf(
+    '<script data-for="leaflet-extras">
+    function(uid, html) {
+      var popup = L.responsivePopup({hasTip: true, autoPan: true, offset: [15, 12]}).setContent(html);
+      return popup;
+    }
+    </script>%s', popupContent
+  )
+  
+  return(popupTemplate)
+}
+
+# Create the Leaflet map
+map <- leaflet(data = minneseums_sf) %>%
+  addProviderTiles("CartoDB.Positron") %>%
+  addPolygons(data = mn_sf, weight = 2, color = "black", fillOpacity = 0) %>%
+  addCircleMarkers(
+    radius = 5,
+    stroke = FALSE,
+    fillOpacity = 0.8,
+    color = "red",
+    labelOptions = labelOptions(noHide = TRUE, direction = "auto"),
+    popup = ~popup_content(name, rate, operation, website_1, address, city)
+  )
+
+map
 ```
 
 # Limitations
 
+<<<<<<< HEAD
 Ecological fallacy
+=======
+- TripAdvisor API: Due to the limitation in the number of API calls, we can only fetch the data of the museums in Minnesota. 
+>>>>>>> 50e336cc231d7c3270feb8adf8d134a820200919
