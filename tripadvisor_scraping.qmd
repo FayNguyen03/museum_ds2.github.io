@@ -43,6 +43,9 @@ tripAdvisorAPI <- function(name, lat, long, state, postal) {
     if (!is.null(address_obj$country) && !is.na(address_obj$country) && address_obj$country != "United States") {
       next
     }
+    if (!is.null(address_obj$country) && !is.na(address_obj$country) && address_obj$country != "United States") {
+      next
+    }
     if (!is.null(address_obj$postalcode)  && substr(address_obj$postalcode, 1, 5) == postal) {
       return(detail$data[[i]]$location_id)
     }
@@ -105,6 +108,7 @@ ranking_string <- vector(length=nrow(locations_mn))
 rating <- vector(length=nrow(locations_mn))
 rating_count <- vector(length=nrow(locations_mn))
 open_hour <- vector(length=nrow(locations_mn))
+names <- vector(length=nrow(locations_mn))
 ```
 
 ```{r}
@@ -117,6 +121,9 @@ for (i in 1:nrow(locations_mn)){
   print(i)
   tripadvisor_content <- tripadvisor_detail(locations_mn$id_tripadvisor[[i]])
   #web url
+  if(!is.null(tripadvisor_content$name)){
+  names[[i]] <- tripadvisor_content$name
+  }
   if(!is.null(tripadvisor_content$website)){
   tripadvisor_web[[i]] <- tripadvisor_content$website
   }
@@ -165,7 +172,8 @@ for (i in 1:nrow(locations_mn)){
 
 
 ```{r}
-locations_mn_fetched <- locations_mn |> mutate(web = tripadvisor_web,
+locations_mn_fetched <- locations_mn |> mutate(nameTrip = names,
+                                      web = tripadvisor_web,
                                        phone = phone_num,
                                        review_write = writing_review,
                                        ranking_str = ranking_string,
@@ -184,6 +192,7 @@ for (i in 1:nrow(locations_mn)){
   print(i)
   tripadvisor_content <- tripadvisor_detail(locations_mn$id_tripadvisor[[i]])
   #web url
+  
   if(!is.null(tripadvisor_content$website)){
   tripadvisor_web[[i]] <- tripadvisor_content$website
   }

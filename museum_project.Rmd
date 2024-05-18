@@ -27,13 +27,10 @@ library(spData)
 data(us_states)
 library(raster)
 library(tmap)
-<<<<<<< HEAD
 library(shiny)
 library(flexdashboard)
-=======
 library(spatialreg)
 library(spdep)
->>>>>>> ad4f8fdf9b6109889f0ffc9dd539370e2e0e4b5e
 
 museums <- read_csv("Data/museums_tidy.csv") 
 museums_sf <- museums |> filter(!is.na(LONGITUDE)) |> filter(!is.na(LATITUDE)) |>  st_as_sf(coords = c("LONGITUDE", "LATITUDE"), remove = FALSE) |> st_set_crs(4326) |> st_transform(4269)
@@ -59,7 +56,7 @@ minneseum <- read_csv("Data/tripadvisor_data.csv")
 
 **Introduction**
 
-![](img/museum1.jpg)
+![](img/museum1.jpg){width = 50%}
 
 Food deserts are areas with limited to no access to nutrition. There have been many analyses of the food disparity globally and nationally, even manifesting in developed urban spaces like Chicago. Analyses have found an intimate relationship between food disparities and race.
 
@@ -68,6 +65,8 @@ Being inspired by these accounts, we were curious to see if there was such a thi
 ------------------------------------------------------------------------
 
 **Data set Information**
+
+We mainly focus on the dataset from [IMLS](https://www.imls.gov/research-evaluation/data-collection/museum-data-files). 
 
 There are 7 categories of museums regulated by the IMLS. For the `DISCIPLINE`, each code corresponds to a category
 
@@ -80,7 +79,6 @@ There are 7 categories of museums regulated by the IMLS. For the `DISCIPLINE`, e
 | SCI  | Science & Technology Museums & Planetariums |
 | GMU  | Uncategorized or General Museums            |
 | HSC  | Historic Preservation                       |
-
 
 # Discipline Distribution
 
@@ -126,6 +124,7 @@ inputPanel(
 ```
 
 ## Column
+
 
 ```{r, echo=FALSE}
 
@@ -176,8 +175,6 @@ renderPlot({
 ```
 
 
-
-
 # Maps
 
 ## Inputs {.sidebar}
@@ -196,14 +193,13 @@ inputPanel(
   
 ```
 
-
 ```{r, echo=FALSE}
   inputPanel(
     selectInput("input_county", label = "County:",
-              choices = c("", filter(counties, STATEFP == "MN")$NAME), selected = "All"),
+              choices = c("", filter(counties, ADSTATE == "MN")$NAME), selected = "All"),
 )
 reactive({
-          updateSelectInput(session, "input_county", choices = c("", filter(counties, STATEFP == input$input_state)$NAME), selected = "")
+          updateSelectInput(session, "input_county", choices = c("", filter(counties, ADSTATE == input$input_state)$NAME), selected = "")
     })
 
 ```
@@ -225,7 +221,6 @@ renderPlot({
   geom_sf(aes_string(fill = input$input_var))
 })
 ```
-
 
 ```{r, echo=FALSE}
 renderPlot({
@@ -276,12 +271,7 @@ ggplot(counties_sf) +
 beep()
 ```
 
-
-Moran's I of counties
-Point-pattern analysis density analysis
-household_income
-population_change
-zip codes
+Moran's I of counties Point-pattern analysis density analysis household_income population_change zip codes
 
 # Explore
 
@@ -294,26 +284,56 @@ tm_shape(museums_sf) +
 
 # Minneseums
 
-Make interactive map of MN for Fay's Tripadvisor
+Since we decided to delve in organizations in Minnesota, we integrated the TripAdvisor API to fetch some data about organizations, combining with the IMLS dataset show when the user is travelling a specific place in MN, they can find the organizations at that location and find valuable information.
 
 ```{r}
-tmap_mode("view")
+minneseums_sf <- minneseum |> filter(!is.na(lat)) |> filter(!is.na(long)) |>  st_as_sf(coords = c("long", "lat"), remove = FALSE) |> st_set_crs(4326) |> st_transform(4269) |>
+  mutate(name = str_replace(name,"<a0>"," "))
+```
 
-# Create the map
-museums_map <- museums_sf |> 
-  filter(ADSTATE == "MN") |> 
-  tm_shape() +
-  tm_dots(
-    col = "DISCIPLINE", 
-    shape = "DISCIPLINE", 
-    alpha = 0.5, 
-    size = 0.1
-  ) +
-  tm_shape(st_union(mn_sf)) + 
-  tm_borders(col = "black", lwd = 3)
+```{r}
+library(leaflet)
+library(leaflet.extras)
 
-museums_map
+popup_content <- function(name, rate, open_hour,web) {
+  popupContent <- mapply(function(name_val, rate_val, open_hour_val, web) {
+    paste0(
+      "<h2>", name_val, "</h2>",
+      "<h4>", 
+      "<p><strong>Rate (TripAdvisor):</strong> ", rate_val, "</p>",
+      "<p><strong>Open Hour:</strong> ", open_hour_val, "</p>",
+      "<a href=\"",web,"\">Link</a>"
+    )
+  }, name, rate, open_hour, web)
+  
+  popupTemplate <- sprintf(
+    '<script data-for="leaflet-extras">
+    function(uid, html) {
+      var popup = L.responsivePopup({hasTip: true, autoPan: true, offset: [15, 12]}).setContent(html);
+      return popup;
+    }
+    </script>%s', popupContent
+  )
+  
+  return(popupTemplate)
+}
+
+# Create the Leaflet map
+map <- leaflet(data = minneseums_sf) %>%
+  addProviderTiles("CartoDB.Positron") %>%
+  addPolygons(data = mn_sf, weight = 2, color = "black", fillOpacity = 0) %>%
+  addCircleMarkers(
+    radius = 5,
+    stroke = FALSE,
+    fillOpacity = 0.8,
+    color = "red",
+    labelOptions = labelOptions(noHide = TRUE, direction = "auto"),
+    popup = ~popup_content(name, rate, operation, website_1)
+  )
+
+map
 ```
 
 # Limitations
 
+- TripAdvisor API: Due to the limitation in the number of API calls, we can only fetch the data of the museums in Minnesota. 
