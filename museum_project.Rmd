@@ -5,9 +5,8 @@ output:
     theme:
       version: 4
       bg: "#101010"
-      fg: "#FDF7F7" 
-      primary: "#a9c5a0"
-      navbar-bg: "#020402"
+      fg: "white" 
+      primary: "#9d5c63"
 runtime: shiny
 ---
 
@@ -31,6 +30,8 @@ library(shiny)
 library(flexdashboard)
 library(spatialreg)
 library(spdep)
+library(plotly)
+library(flexdashboard)
 
 museums <- read_csv("Data/museums_tidy.csv") 
 museums_sf <- museums |> filter(!is.na(LONGITUDE)) |> filter(!is.na(LATITUDE)) |>  st_as_sf(coords = c("LONGITUDE", "LATITUDE"), remove = FALSE) |> st_set_crs(4326) |> st_transform(4269)
@@ -56,19 +57,18 @@ minneseum <- read_csv("Data/tripadvisor_data.csv")
 
 **Introduction**
 
-![](img/museum1.jpg){width = 50%}
+![](img/museum1.jpg)
 
 Food deserts are areas with limited to no access to nutrition. There have been many analyses of the food disparity globally and nationally, even manifesting in developed urban spaces like Chicago. Analyses have found an intimate relationship between food disparities and race.
 
-Being inspired by these accounts, we were curious to see if there was such a thing as a museum desert. While they are not as essential as food, museums offer important educational information as well as being sources of entertainment. This is important as museums can offer insights from disciplines outside of one’s usual pursuits, offer a more specialised investigation of a certain topic, or provide information that are excluded by institutional bias. Are museums really impactful? Does having one near you improve the quality of life or of education? Who is likely to have access to a museum, and how costly would it be?
+Being inspired by these accounts, we were curious to see if there was such a thing as a museum desert. While they are not as essential as food, museums offer important educational information as well as being sources of entertainment. This is important as museums can offer insights from disciplines outside of one’s usual pursuits, offer a more specialised investigation of a certain topic, or provide information that are excluded by institutional bias. 
+
 
 ------------------------------------------------------------------------
 
-**Data set Information**
+ **Data set Information**
 
-We mainly focus on the dataset from [IMLS](https://www.imls.gov/research-evaluation/data-collection/museum-data-files). 
-
-There are 7 categories of museums regulated by the IMLS. For the `DISCIPLINE`, each code corresponds to a category
+We mainly focus on the dataset from [IMLS](https://www.imls.gov/research-evaluation/data-collection/museum-data-files). There are 7 categories of museums regulated by the IMLS, represented by the `DISCIPLINE` with each code corresponding to a specific category.
 
 | CODE | DISCIPLINE                                  |
 |------|---------------------------------------------|
@@ -107,17 +107,20 @@ inputPanel(
 ```{r server, echo = FALSE}
 inputPanel(
   dynamicInput <- renderUI({
+    areg <- museums$AAMREG[museums$AAMREG!="NA"]
+    breg <- museums$BREG[museums$BREG!="NA"]
+    local <- museums$LOCALE4[museums$LOCALE4!="NA"]
     if (input$unit == "State") {
       selectInput("state", "State", choices = museums$ADSTATE, selected = "MN")
     } 
     else if (input$unit == "AAMREG") {
-      selectInput("aamreg", "AAMREG", choices = museums$AAMREG , selected = "1")
+      selectInput("aamreg", "AAMREG", choices = areg , selected = 1)
     } 
     else if (input$unit == "BEAREG") {
-      selectInput("beareg", "BEAREG", choices = museums$BEAREG, selected = "1")
+      selectInput("beareg", "BEAREG", choices = breg, selected = 2)
     } 
     else if (input$unit == "LOCALE4") {
-      selectInput("locale4", "LOCALE4", choices = museums$LOCALE4, selected = "1")
+      selectInput("locale4", "LOCALE4", choices = museums$LOCALE4, selected = 1)
     }
   })
 )
@@ -127,7 +130,6 @@ inputPanel(
 
 
 ```{r, echo=FALSE}
-
 renderPlot({
   if(input$unit == "State"){
     if (input$state != ""){
@@ -166,16 +168,21 @@ renderPlot({
       title1 <- paste("Discipline Distribution in",aamreg[as.numeric(input$locale4)],"territories")
   }
     discipline1|>
-    ggplot(aes(x = fct_reorder(DISCIPLINE,n), y = n)) +
-    geom_col(aes(fill = DISCIPLINE)) +
-    coord_flip(xlim = NULL, ylim = NULL, expand = TRUE, clip = "on")+
-    labs(x = "Number of Organizations", y = "Discipline", title = title1) +
-    theme_minimal()
+      ggplot(aes(x = fct_reorder(DISCIPLINE,n), y = n)) +
+      geom_col(aes(fill = DISCIPLINE)) +
+      coord_flip(xlim = NULL, ylim = NULL, expand = TRUE, clip = "on")+
+      labs(y = "Number of Organizations", x = "Discipline", title = title1) +
+      theme_minimal()
 })
 ```
 
 
-# Maps
+```{r}
+
+```
+
+
+# Nationwide exploration
 
 ## Inputs {.sidebar}
 
@@ -183,12 +190,6 @@ renderPlot({
 inputPanel(
   selectInput("input_var", label = "Number of museums by:",
               choices = c("State", "Population", "Area"), selected = "State"),
-  
-  sliderInput("bw_adjust2", label = "Bandwidth adjustment:",
-              min = 0.1, max = 3, value = 1.2, step = 0.1),
-  
-  selectInput("input_state", label = "State:",
-              choices = c(as.character(us_states$ADSTATE)), selected = "MN")
 )
   
 ```
@@ -205,7 +206,6 @@ reactive({
 ```
 
 ## Column
-
 ```{r, echo=FALSE}
 renderPlot({
   museums |> 
@@ -218,9 +218,38 @@ renderPlot({
   ) |> 
   st_as_sf() |> 
   ggplot() +
-  geom_sf(aes_string(fill = input$input_var))
+  geom_sf(aes_string(fill = input$input_var)) +
+    theme_map()
 })
 ```
+
+# State exploration
+
+## Inputs {.sidebar}
+
+```{r, echo = FALSE}
+inputPanel({
+  selectInput("input_state", label = "State:",
+              choices = c(as.character(us_states$ADSTATE)), selected = "MN")
+})
+```
+
+
+```{r, echo=FALSE}
+  inputPanel(
+    selectInput("input_county", label = "County:",
+              choices = c("", filter(counties, ADSTATE == "MN")$NAME), selected = "All"),
+)
+```
+
+```{r, echo = FALSE}
+reactive({
+          updateSelectInput(session, "input_county", choices = c("", filter(counties, ADSTATE == input$input_state)$NAME), selected = "")
+    })
+
+```
+
+## Column
 
 ```{r, echo=FALSE}
 renderPlot({
@@ -247,7 +276,7 @@ ggplot() +
 beep()
 ```
 
-```{r}
+```{r, echo=FALSE}
 renderPlot({
 state_var = input$input_state
 
@@ -262,16 +291,26 @@ counties_sf$n = lengths(st_intersects(counties_sf, state_museums_sf))
 set.seed(1)
 counties_nb <- poly2nb(counties_sf, queen = FALSE)
 counties_nbw <- nb2listw(counties_nb, style = "W", zero.policy = TRUE)
-moran.mc(counties_sf$n, counties_nbw, nsim = 999) # Loop
+ac_stat = moran.mc(counties_sf$n, counties_nbw, nsim = 999)
+
 
 ggplot(counties_sf) +
   geom_sf(aes(fill = n / ALAND))
 })
 
+renderValueBox({
+  valueBox(value = ac_stat$statistic)
+})
 beep()
 ```
 
 Moran's I of counties Point-pattern analysis density analysis household_income population_change zip codes
+
+Moran's I of counties
+Point-pattern analysis density analysis
+household_income
+population_change
+zip codes
 
 # Explore
 
@@ -291,20 +330,25 @@ minneseums_sf <- minneseum |> filter(!is.na(lat)) |> filter(!is.na(long)) |>  st
   mutate(name = str_replace(name,"<a0>"," "))
 ```
 
+
 ```{r}
 library(leaflet)
 library(leaflet.extras)
 
-popup_content <- function(name, rate, open_hour,web) {
-  popupContent <- mapply(function(name_val, rate_val, open_hour_val, web) {
+popup_content <- function(name, rate, operation, website_1, address, city) {
+  rate_val <- ifelse(rate != FALSE, paste0("<p><strong>Rate (TripAdvisor):</strong> ", rate, "</p>"), "<p><strong>Rate (TripAdvisor):</strong> Not Available</p>")
+  open_hour_val <- ifelse(operation != FALSE, paste0("<p><strong>Open Hour:</strong> ", operation, "</p>"), "")
+  web_val <- ifelse(website_1 != FALSE, paste0("<a href=\"", website_1, "\">Link</a>"), "")
+  
+  popupContent <- mapply(function(name_val, rate_val, open_hour_val, web_val, address_val, city_val) {
     paste0(
       "<h2>", name_val, "</h2>",
-      "<h4>", 
-      "<p><strong>Rate (TripAdvisor):</strong> ", rate_val, "</p>",
-      "<p><strong>Open Hour:</strong> ", open_hour_val, "</p>",
-      "<a href=\"",web,"\">Link</a>"
+      "<h4>", address_val, " ",city_val, "</h4>",
+      rate_val,
+      open_hour_val,
+      web_val
     )
-  }, name, rate, open_hour, web)
+  }, name, rate_val, open_hour_val, web_val, address, city)
   
   popupTemplate <- sprintf(
     '<script data-for="leaflet-extras">
@@ -328,7 +372,7 @@ map <- leaflet(data = minneseums_sf) %>%
     fillOpacity = 0.8,
     color = "red",
     labelOptions = labelOptions(noHide = TRUE, direction = "auto"),
-    popup = ~popup_content(name, rate, operation, website_1)
+    popup = ~popup_content(name, rate, operation, website_1, address, city)
   )
 
 map
