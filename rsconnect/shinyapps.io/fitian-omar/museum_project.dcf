@@ -1,0 +1,10 @@
+name: museum_project
+title:
+username: fitian-omar
+account: fitian-omar
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 12027530
+bundleId: 8632220
+url: https://fitian-omar.shinyapps.io/museum_project/
+version: 1

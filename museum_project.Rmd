@@ -33,6 +33,7 @@ library(spatialreg)
 library(spdep)
 library(plotly)
 library(flexdashboard)
+library(tm)
 
 museums <- read_csv("Data/museums_tidy.csv") 
 museums_sf <- museums |> filter(!is.na(LONGITUDE)) |> filter(!is.na(LATITUDE)) |>  st_as_sf(coords = c("LONGITUDE", "LATITUDE"), remove = FALSE) |> st_set_crs(4326) |> st_transform(4269)
@@ -300,24 +301,16 @@ renderValueBox({
 beep()
 ```
 
-
-
-Moran's I of counties
-Point-pattern analysis density analysis
-household_income
-population_change
-zip codes
-
 # Explore
 
 ```{r echo = FALSE}
 tmap_mode("view")
-museums_sf |> 
+museums_sf |>
   mutate(
     COMMONNAME = iconv(COMMONNAME, to = "utf-8"),
     ADSTREET = iconv(ADSTREET, to = "utf-8"),
     ADCITY = iconv(ADCITY, to = "utf-8"),
-  ) |> 
+  ) |>
 tm_shape() +
   tm_dots(col = "DISCIPLINE", alpha = 0.5, size = 0.1, id = "COMMONNAME", popup.vars = c("Website:" = "WEBURL", "Address:" = "ADSTREET", "City:" = "ADCITY", "State:" = "ADSTATE", "ZIP:" = "ADZIP5"))
 
@@ -346,3 +339,4 @@ museums_map
 
 # Limitations
 
+Ecological fallacy

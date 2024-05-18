@@ -1,0 +1,12 @@
+name: museum_project
+title: museum_project
+username: fitian1
+account: fitian1
+server: rconnect.stolaf.edu
+hostUrl: https://rconnect.stolaf.edu/__api__
+appId: 646
+bundleId: 1606
+url: https://rconnect.stolaf.edu/content/963d4c68-715a-48ed-9de1-ab8fede94f71/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
