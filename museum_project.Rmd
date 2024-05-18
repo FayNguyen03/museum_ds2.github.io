@@ -22,6 +22,8 @@ library(raster)
 library(tmap)
 library(spatialreg)
 library(spdep)
+library(plotly)
+library(flexdashboard)
 
 museums <- read_csv("Data/museums_tidy.csv") 
 museums_sf <- museums |> filter(!is.na(LONGITUDE)) |> filter(!is.na(LATITUDE)) |>  st_as_sf(coords = c("LONGITUDE", "LATITUDE"), remove = FALSE) |> st_set_crs(4326) |> st_transform(4269)
@@ -154,7 +156,7 @@ renderPlot({
 })
 ```
 
-# Maps
+# Nationwide exploration
 
 ## Inputs {.sidebar}
 
@@ -162,30 +164,11 @@ renderPlot({
 inputPanel(
   selectInput("input_var", label = "Number of museums by:",
               choices = c("State", "Population", "Area"), selected = "State"),
-  
-  sliderInput("bw_adjust2", label = "Bandwidth adjustment:",
-              min = 0.1, max = 3, value = 1.2, step = 0.1),
-  
-  selectInput("input_state", label = "State:",
-              choices = c(as.character(us_states$ADSTATE)), selected = "MN")
 )
   
-```
-
-
-```{r, echo=FALSE}
-  inputPanel(
-    selectInput("input_county", label = "County:",
-              choices = c("", filter(counties, ADSTATE == "MN")$NAME), selected = "All"),
-)
-reactive({
-          updateSelectInput(session, "input_county", choices = c("", filter(counties, ADSTATE == input$input_state)$NAME), selected = "")
-    })
-
 ```
 
 ## Column
-
 ```{r, echo=FALSE}
 renderPlot({
   museums |> 
@@ -198,10 +181,38 @@ renderPlot({
   ) |> 
   st_as_sf() |> 
   ggplot() +
-  geom_sf(aes_string(fill = input$input_var))
+  geom_sf(aes_string(fill = input$input_var)) +
+    theme_map()
 })
 ```
 
+# State exploration
+
+## Inputs {.sidebar}
+
+```{r}
+inputPanel({
+  selectInput("input_state", label = "State:",
+              choices = c(as.character(us_states$ADSTATE)), selected = "MN")
+})
+```
+
+
+```{r, echo=FALSE}
+  inputPanel(
+    selectInput("input_county", label = "County:",
+              choices = c("", filter(counties, ADSTATE == "MN")$NAME), selected = "All"),
+)
+```
+
+```{r, echo = FALSE}
+reactive({
+          updateSelectInput(session, "input_county", choices = c("", filter(counties, ADSTATE == input$input_state)$NAME), selected = "")
+    })
+
+```
+
+## Column
 
 ```{r, echo=FALSE}
 renderPlot({
@@ -228,7 +239,7 @@ ggplot() +
 beep()
 ```
 
-```{r}
+```{r, echo=FALSE}
 renderPlot({
 state_var = input$input_state
 
@@ -243,14 +254,19 @@ counties_sf$n = lengths(st_intersects(counties_sf, state_museums_sf))
 set.seed(1)
 counties_nb <- poly2nb(counties_sf, queen = FALSE)
 counties_nbw <- nb2listw(counties_nb, style = "W", zero.policy = TRUE)
-moran.mc(counties_sf$n, counties_nbw, nsim = 999) # Loop
+ac_stat = moran.mc(counties_sf$n, counties_nbw, nsim = 999)
+
 
 ggplot(counties_sf) +
   geom_sf(aes(fill = n / ALAND))
 })
 
+renderValueBox({
+  valueBox(value = ac_stat$statistic)
+})
 beep()
 ```
+
 
 
 Moran's I of counties
