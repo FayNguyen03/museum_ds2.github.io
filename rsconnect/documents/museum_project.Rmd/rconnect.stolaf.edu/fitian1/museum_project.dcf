@@ -5,8 +5,9 @@ account: fitian1
 server: rconnect.stolaf.edu
 hostUrl: https://rconnect.stolaf.edu/__api__
 appId: 646
-bundleId: 1606
+bundleId: 1609
 url: https://rconnect.stolaf.edu/content/963d4c68-715a-48ed-9de1-ab8fede94f71/
 version: 1
 asMultiple: FALSE
 asStatic: FALSE
+additionalFiles: Data/shp_bdry_counties_in_minnesota/mn_county_boundaries.sbx|Data/shp_bdry_counties_in_minnesota/mn_county_boundaries.shx|Data/shp_bdry_counties_in_minnesota/mn_county_boundaries.sbn|Data/shp_bdry_counties_in_minnesota/mn_county_boundaries.dbf
