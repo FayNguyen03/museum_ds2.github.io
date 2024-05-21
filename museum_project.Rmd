@@ -44,6 +44,7 @@ library(spdep)
 library(plotly)
 library(flexdashboard)
 library(tm)
+library(ggplot2)
 
 museums <- read_csv("Data/museums_tidy.csv") 
 museums_sf <- museums |> filter(!is.na(LONGITUDE)) |> filter(!is.na(LATITUDE)) |>  st_as_sf(coords = c("LONGITUDE", "LATITUDE"), remove = FALSE) |> st_set_crs(4326) |> st_transform(4269)
@@ -78,11 +79,9 @@ Being inspired by these accounts, we were curious to see if there was such a thi
 
 This project aims to explore the diversity and quantity of museums in the United States, in an attempt to visualise trends in spatial distribution, discipline, and museum-goers' experiences.
 
-------------------------------------------------------------------------
+**Data set Information**
 
- **Data set Information**
-
-We mainly focus on the dataset from [IMLS](https://www.imls.gov/research-evaluation/data-collection/museum-data-files). There are 7 categories of museums regulated by the IMLS, represented by the `DISCIPLINE` with each code corresponding to a specific category.
+We mainly focus on the dataset from [IMLS](https://www.imls.gov/research-evaluation/data-collection/museum-data-files). There are 7 categories of museums regulated by the IMLS, represented by the `DISCIPLINE` with each code corresponding to a specific category. Besides, we attempted fetching data from the TripAdvisorAPI to gain more information from the tourist perspective.
 
 | CODE | DISCIPLINE                                  |
 |------|---------------------------------------------|
@@ -104,22 +103,6 @@ inputPanel(
                 choices = c("State", "AAMREG", "BEAREG", "LOCALE4"),
                 selected = "State"),
   uiOutput("dynamicInput"),
-  radioButtons(
-      "discipline",
-      label = "Discipline",
-      choices = unique(museums$DISCIPLINE),
-      selected = NULL,
-      inline = FALSE,
-      width = NULL,
-      choiceNames = NULL,
-      choiceValues = NULL
-    )
-)
-
-```
-
-```{r server, echo = FALSE}
-inputPanel(
   dynamicInput <- renderUI({
     areg <- museums$AAMREG[museums$AAMREG!="NA"]
     breg <- museums$BREG[museums$BREG!="NA"]
@@ -128,17 +111,24 @@ inputPanel(
       selectInput("state", "State", choices = museums$ADSTATE, selected = "MN")
     } 
     else if (input$unit == "AAMREG") {
-      selectInput("aamreg", "AAMREG", choices = areg , selected = 1)
+      selectInput("aamreg", "AAMREG", choices = c("New England", "Mid-Atlantic", "Southeastern", "Midwest", "Mountain Plains", "Western") , selected = "Midwest")
     } 
     else if (input$unit == "BEAREG") {
-      selectInput("beareg", "BEAREG", choices = breg, selected = 2)
+      selectInput("beareg", "BEAREG", choices = c("New England", "Mid-East", "Great Lakes", "Plains", "Southest", "Southwest", "Rocky Mountains", "Far West"), selected = "Southest")
     } 
     else if (input$unit == "LOCALE4") {
-      selectInput("locale4", "LOCALE4", choices = museums$LOCALE4, selected = 1)
+      selectInput("locale4", "LOCALE4", choices = c("City", "Suburb", "Town", "Rural"), selected = "City")
     }
   })
+  
 )
+
 ```
+
+We can see that in most states, a large portion of museums are categorized as `Historic Preservation` or `General Meseum` while the two types of museums that have the smallest number of organizations are `Children Museum` and `Natural Science Museum`.
+
+When we consider the unit of area as AAMREG (Museum region, regions are determined by AAM) or BEAREG (Bureau of Economic Analysis regions), the type of museums with the largest amount is always `Historic Preservation`. However, when we consider the unit of area as LOCALE4 (NCES Urban-Centric Locale Codes classification), `General Museum` always takes the top 1 in all types of territories. 
+
 
 ## Column
 
@@ -161,25 +151,25 @@ renderPlot({
     }
   }
   else if (input$unit == "AAMREG"){
-      discipline1 <- museums |> filter(AAMREG == input$aamreg)|>
+      aamreg <- c("New England", "Mid-Atlantic", "Southeastern", "Midwest", "Mountain Plains", "Western")
+      discipline1 <- museums |> filter(AAMREG == match(aamreg,input$aamreg))|>
       group_by(DISCIPLINE) |>
       summarize(n = n()) 
-      aamreg <- c("New England", "Mid-Atlantic", "Southeastern", "Midwest", "Mountain Plains", "Western")
-      title1 <- paste("Discipline Distribution in",aamreg[as.numeric(input$aamreg)],"region")
+      title1 <- toupper(paste("Discipline Distribution in",input$aamreg,"region"))
   }
   else if (input$unit == "BEAREG"){
-      discipline1 <- museums |> filter(BEAREG == input$beareg)|>
+      beareg <- c("New England", "Mid-East", "Great Lakes", "Plains", "Southest", "Southwest", "Rocky Mountains", "Far West")
+      discipline1 <- museums |> filter(BEAREG == match(beareg,input$beareg))|>
       group_by(DISCIPLINE) |>
       summarize(n = n()) 
-      beareg <- c("New England", "Mid-East", "Great Lakes", "Plains", "Southest", "Southwest", "Rocky Mountains", "Far West")
-      title1 <- paste("Discipline Distribution in",beareg[as.numeric(input$beareg)],"region")
+      title1 <- toupper(paste("Discipline Distribution in",input$beareg,"region"))
   }
   else if (input$unit == "LOCALE4"){
-      discipline1 <- museums |> filter(LOCALE4 == input$locale4)|>
+      local <- c("City", "Suburb", "Town", "Rural")
+      discipline1 <- museums |> filter(LOCALE4 == match(local,input$locale4))|>
       group_by(DISCIPLINE) |>
       summarize(n = n()) 
-      aamreg <- c("City", "Suburb", "Town", "Rural")
-      title1 <- paste("Discipline Distribution in",aamreg[as.numeric(input$locale4)],"territories")
+      title1 <- toupper(paste("Discipline Distribution in",input$locale4,"territories"))
   }
     discipline1|>
       ggplot(aes(x = fct_reorder(DISCIPLINE,n), y = n)) +
@@ -324,7 +314,7 @@ beep()
 
 Since we decided to delve in organizations in Minnesota, we integrated the TripAdvisor API to fetch some data about organizations, combining with the IMLS dataset show when the user is travelling a specific place in MN, they can find the organizations at that location and find valuable information.
 
-```{r}
+```{r, echo = FALSE}
 minneseums_sf <- minneseum |> filter(!is.na(lat)) |> filter(!is.na(long)) |>  st_as_sf(coords = c("long", "lat"), remove = FALSE) |> st_set_crs(4326) |> st_transform(4269) |>
   mutate(name = str_replace(name,"<a0>"," "))
 ```
@@ -333,20 +323,23 @@ minneseums_sf <- minneseum |> filter(!is.na(lat)) |> filter(!is.na(long)) |>  st
 library(leaflet)
 library(leaflet.extras)
 
-popup_content <- function(name, rate, operation, website_1, address, city) {
+popup_content <- function(name, rate, operation, website_1, address, city, img) {
+  img_val <- ifelse(img != FALSE, paste0("<img src=\"", img, "\">"),"")
   rate_val <- ifelse(rate != FALSE, paste0("<p><strong>Rate (TripAdvisor):</strong> ", rate, "</p>"), "<p><strong>Rate (TripAdvisor):</strong> Not Available</p>")
   open_hour_val <- ifelse(operation != FALSE, paste0("<p><strong>Open Hour:</strong> ", operation, "</p>"), "<p>Open Hour: Not Available</p>")
   web_val <- ifelse(website_1 != FALSE, paste0("<a href=\"", website_1, "\">Link</a>"), "<p>Link: Not Available</p>")
   
-  popupContent <- mapply(function(name_val, rate_val, open_hour_val, web_val, address_val, city_val) {
+  popupContent <- mapply(function(name_val, rate_val, open_hour_val, web_val, address_val, city_val, image) {
     paste0(
+      img_val,
       "<h2>", name_val, "</h2>",
       "<h4>", address_val, " ",city_val, "</h4>",
       rate_val,
       open_hour_val,
       web_val
+      
     )
-  }, name, rate_val, open_hour_val, web_val, address, city)
+  }, name, rate_val, open_hour_val, web_val, address, city,img_val)
   
   popupTemplate <- sprintf(
     '<script data-for="leaflet-extras">
@@ -370,7 +363,7 @@ map <- leaflet(data = minneseums_sf) %>%
     fillOpacity = 0.8,
     color = "red",
     labelOptions = labelOptions(noHide = TRUE, direction = "auto"),
-    popup = ~popup_content(name, rate, operation, website_1, address, city)
+    popup = ~popup_content(name, rate, operation, website_1, address, city, image)
   )
 
 map
@@ -378,8 +371,10 @@ map
 
 # Limitations
 
-
 We must be wary of ecological fallacy, as museumgoers in states with relatively little institutions may be more avid attendees. Our analysis does not consider the robustness of exhibitions, frequency of new programs, and the out-of-state proportion of visitors.
 
-Due to the limitation in the number of API calls, we were only able to fetch the data of museums in Minnesota. 
+Due to the limitation in the number of API calls (5000) allowed for a free subscription plan, we can only fetch the data of the museums in Minnesota. The process is complicated since first we needed to find the `locationId` (a unique identifier for a location on Tripadvisor) among many locations that are similar to our locations of interest. Then we use the ID to fetch the information and image link. There exist some locations that are not available on the TripAdvisor database or the places have not had any reviews or description records.  
+
+![](https://files.readme.io/fab482d-Tripadvisor_lockup_horizontal_secondary_registered.svg)
+
 
